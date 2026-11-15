@@ -2,15 +2,23 @@
 
 import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
+import { deleteMemoryPhoto } from "@/app/actions";
 
 type GalleryPhoto = {
   id: string;
   url: string;
   thumbnailUrl: string | null;
-  caption: string | null;
 };
 
-export function PhotoGallery({ photos, albumTitle }: { photos: GalleryPhoto[]; albumTitle: string }) {
+export function PhotoGallery({
+  photos,
+  albumId,
+  albumTitle,
+}: {
+  photos: GalleryPhoto[];
+  albumId: string;
+  albumTitle: string;
+}) {
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
   const returnFocusRef = useRef<HTMLElement | null>(null);
@@ -82,25 +90,15 @@ export function PhotoGallery({ photos, albumTitle }: { photos: GalleryPhoto[]; a
     <>
       <div className="grid grid-cols-2 gap-2">
         {photos.map((photo, index) => (
-          <button
-            type="button"
-            className="relative block aspect-square overflow-hidden rounded-field bg-card"
+          <PhotoTile
             key={photo.id}
-            onClick={(event) => openViewer(index, event)}
-            aria-label={`Open photo ${index + 1} of ${photos.length}${photo.caption ? `: ${photo.caption}` : ""}`}
-          >
-            <Image
-              src={photo.thumbnailUrl ?? photo.url}
-              alt={photo.caption || `Photo ${index + 1} from ${albumTitle}`}
-              fill
-              sizes="(max-width: 640px) 50vw, 320px"
-              unoptimized
-              priority={index < 2}
-              loading={index < 2 ? undefined : "lazy"}
-              decoding="async"
-              className="object-cover"
-            />
-          </button>
+            photo={photo}
+            index={index}
+            count={photos.length}
+            albumId={albumId}
+            albumTitle={albumTitle}
+            onOpen={openViewer}
+          />
         ))}
       </div>
       {activePhoto && activeIndex !== null ? (
@@ -143,7 +141,7 @@ export function PhotoGallery({ photos, albumTitle }: { photos: GalleryPhoto[]; a
           <div className="relative h-[75dvh] w-full max-w-5xl">
             <Image
               src={activePhoto.url}
-              alt={activePhoto.caption || `Photo ${activeIndex + 1} from ${albumTitle}`}
+              alt={`Photo ${activeIndex + 1} from ${albumTitle}`}
               fill
               sizes="100vw"
               unoptimized
@@ -163,10 +161,63 @@ export function PhotoGallery({ photos, albumTitle }: { photos: GalleryPhoto[]; a
           </button>
           <div className="mt-3 max-w-3xl text-center">
             <p className="text-sm font-bold">{activeIndex + 1} / {photos.length}</p>
-            {activePhoto.caption ? <p className="mt-1 text-sm text-white/80">{activePhoto.caption}</p> : null}
           </div>
         </div>
       ) : null}
     </>
+  );
+}
+
+function PhotoTile({
+  photo,
+  index,
+  count,
+  albumId,
+  albumTitle,
+  onOpen,
+}: {
+  photo: GalleryPhoto;
+  index: number;
+  count: number;
+  albumId: string;
+  albumTitle: string;
+  onOpen: (index: number, event: React.MouseEvent<HTMLButtonElement>) => void;
+}) {
+  const deleteAction = deleteMemoryPhoto.bind(null, albumId, photo.id);
+
+  return (
+    <article className="photo-tile">
+      <button
+        type="button"
+        className="relative block aspect-square w-full overflow-hidden rounded-card bg-blush"
+        onClick={(event) => onOpen(index, event)}
+        aria-label={`Open photo ${index + 1} of ${count}`}
+      >
+        <Image
+          src={photo.thumbnailUrl ?? photo.url}
+          alt={`Photo ${index + 1} from ${albumTitle}`}
+          fill
+          sizes="(max-width: 640px) 50vw, 320px"
+          unoptimized
+          priority={index < 2}
+          loading={index < 2 ? undefined : "lazy"}
+          decoding="async"
+          className="object-cover"
+        />
+      </button>
+      <details className="photo-action-menu">
+        <summary aria-label={`Photo ${index + 1} options`} title="Photo options">•••</summary>
+        <div className="photo-action-popover">
+          <form
+            action={deleteAction}
+            onSubmit={(event) => {
+              if (!window.confirm("Delete this photo? This cannot be undone.")) event.preventDefault();
+            }}
+          >
+            <button type="submit" className="photo-action-delete">Delete photo</button>
+          </form>
+        </div>
+      </details>
+    </article>
   );
 }

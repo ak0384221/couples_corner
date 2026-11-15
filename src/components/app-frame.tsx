@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import Link from "next/link";
 import { connection } from "next/server";
+import { AppBackButton } from "@/components/app-back-button";
 import { BottomNavigation } from "@/components/bottom-navigation";
 import { Heart } from "@/components/heart";
 import { createClient } from "@/lib/supabase/server";
@@ -39,9 +40,7 @@ export async function AppFrame({
     <div className="min-h-dvh px-5 pb-28 pt-7">
       <header className="mb-6 flex items-center gap-3">
         {backHref ? (
-          <Link className="icon-button" href={backHref} aria-label="Go back">
-            ←
-          </Link>
+          <AppBackButton fallback={backHref} />
         ) : null}
         <div className="min-w-0 flex-1">
           <p className="text-xs font-bold uppercase tracking-[0.18em] text-primary">Our little corner</p>

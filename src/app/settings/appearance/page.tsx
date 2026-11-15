@@ -13,7 +13,13 @@ export default async function AppearancePage() {
   if (!profile) notFound();
   return (
     <AppFrame title="Appearance" backHref="/settings">
-      <Card><p className="mb-4 text-sm text-ink-soft">Make our corner feel like yours. Dark mode keeps text readable.</p><AppearanceForm theme={profile} /></Card>
+      <Card>
+        <p className="mb-4 text-sm text-ink-soft">Make our corner feel like yours. Dark mode keeps text readable.</p>
+        <AppearanceForm
+          key={`${profile.theme_mode}-${profile.theme_font}-${profile.theme_accent}-${profile.theme_font_color}`}
+          theme={profile}
+        />
+      </Card>
     </AppFrame>
   );
 }

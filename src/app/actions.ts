@@ -10,6 +10,7 @@ import { EMAIL_DELIVERY_PAUSED, sendAppEmail } from "@/lib/notifications/email";
 import type { ActionState } from "@/lib/action-state";
 import { albumSchema, appearanceSchema, dateSchema, profileSchema } from "@/lib/validation/forms";
 import { MAX_MEMORY_PHOTOS, MAX_PHOTO_BYTES } from "@/lib/photo-limits";
+import { DATE_OPTION_CATEGORIES } from "@/lib/date-options";
 
 function value(formData: FormData, key: string): string {
   const field = formData.get(key);
@@ -227,6 +228,84 @@ export async function createDate(_previous: ActionState, formData: FormData): Pr
   redirect(`/dates/${date.id}${emailSent ? "" : "?email=not-sent"}`);
 }
 
+export async function manageDateOption(
+  categoryValue: string,
+  operationValue: string,
+  optionIdValue: string,
+  labelValue: string,
+): Promise<ActionState> {
+  const category = z.enum(DATE_OPTION_CATEGORIES).safeParse(categoryValue);
+  const operation = z.enum(["add", "rename", "delete"]).safeParse(operationValue);
+  if (!category.success || !operation.success) return fail("Choose a valid date-planning option.");
+
+  const label = labelValue.trim();
+  if (operation.data !== "delete" && (!label || label.length > 40)) {
+    return fail("Choices must be between 1 and 40 characters.");
+  }
+  const optionId = operation.data === "add" ? null : z.string().uuid().safeParse(optionIdValue);
+  if (optionId && !optionId.success) return fail("Choose a valid date-planning option.");
+
+  await requireUser();
+  const supabase = await createClient();
+  const { data: coupleId, error: coupleError } = await supabase.rpc("current_couple_id");
+  if (coupleError || !coupleId) return fail("Pair your accounts before managing date choices.");
+
+  if (operation.data === "add") {
+    const { data: lastOption, error: sortError } = await supabase
+      .from("date_options")
+      .select("sort_order")
+      .eq("category", category.data)
+      .order("sort_order", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (sortError) return fail("Could not load this group's choices.");
+    const { error } = await supabase.from("date_options").insert({
+      couple_id: coupleId,
+      category: category.data,
+      label,
+      sort_order: (lastOption?.sort_order ?? -1) + 1,
+    });
+    if (error) {
+      return fail(/duplicate key|unique constraint/i.test(error.message)
+        ? "That choice already exists in this group."
+        : "Could not add that choice. Please try again.");
+    }
+  } else if (operation.data === "rename" && optionId && optionId.success) {
+    const { data, error } = await supabase
+      .from("date_options")
+      .update({ label })
+      .eq("id", optionId.data)
+      .eq("category", category.data)
+      .select("id")
+      .maybeSingle();
+    if (error) {
+      return fail(/duplicate key|unique constraint/i.test(error.message)
+        ? "That choice already exists in this group."
+        : "Could not rename that choice. Please try again.");
+    }
+    if (!data) return fail("That choice is no longer available.");
+  } else if (operation.data === "delete" && optionId && optionId.success) {
+    const { count, error: countError } = await supabase
+      .from("date_options")
+      .select("id", { count: "exact", head: true })
+      .eq("category", category.data);
+    if (countError) return fail("Could not check this group's choices.");
+    if ((count ?? 0) <= 1) return fail("Keep at least one choice in each group.");
+    const { data, error } = await supabase
+      .from("date_options")
+      .delete()
+      .eq("id", optionId.data)
+      .eq("category", category.data)
+      .select("id")
+      .maybeSingle();
+    if (error) return fail("Could not delete that choice. Please try again.");
+    if (!data) return fail("That choice is no longer available.");
+  }
+
+  revalidatePath("/dates/new");
+  return { error: null, success: operation.data === "delete" ? "Choice deleted." : "Choices saved." };
+}
+
 export async function updateDate(_previous: ActionState, formData: FormData): Promise<ActionState> {
   const dateId = z.string().uuid().safeParse(value(formData, "date_id"));
   const day = z.iso.date().safeParse(value(formData, "day"));
@@ -355,6 +434,64 @@ export async function createAlbum(_previous: ActionState, formData: FormData): P
   redirect(`/memories/${data.id}`);
 }
 
+export async function updateAlbum(
+  albumId: string,
+  _previous: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const parsedId = z.string().uuid().safeParse(albumId);
+  const parsedAlbum = albumSchema.safeParse({
+    title: value(formData, "title"),
+    albumDate: value(formData, "album_date"),
+  });
+  if (!parsedId.success) return fail("Choose a valid album.");
+  if (!parsedAlbum.success) return fail(parsedAlbum.error.issues[0]?.message ?? "Check the album details.");
+
+  await requireUser();
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("albums")
+    .update({ title: parsedAlbum.data.title, album_date: parsedAlbum.data.albumDate })
+    .eq("id", parsedId.data)
+    .select("id")
+    .maybeSingle();
+  if (error) return fail(databaseMessage(error.message));
+  if (!data) return fail("This album is no longer available.");
+
+  revalidatePath(`/memories/${parsedId.data}`);
+  revalidatePath("/memories");
+  return { error: null, success: "Album details saved." };
+}
+
+export async function deleteAlbum(albumId: string): Promise<never> {
+  const parsedId = z.string().uuid().safeParse(albumId);
+  if (!parsedId.success) throw new Error("Choose a valid album.");
+  await requireUser();
+  const supabase = await createClient();
+  const { data: photos, error: photosError } = await supabase
+    .from("photos")
+    .select("storage_path, thumb_path")
+    .eq("album_id", parsedId.data);
+  if (photosError) throw new Error(`Could not prepare album deletion: ${photosError.message}`);
+
+  const { data: deletedAlbum, error: deleteError } = await supabase
+    .from("albums")
+    .delete()
+    .eq("id", parsedId.data)
+    .select("id")
+    .maybeSingle();
+  if (deleteError) throw new Error(`Could not delete album: ${deleteError.message}`);
+  if (!deletedAlbum) throw new Error("This album is no longer available.");
+
+  const paths = [...new Set((photos ?? []).flatMap((photo) => [photo.storage_path, photo.thumb_path].filter((path): path is string => Boolean(path))))];
+  const { error: cleanupError } = paths.length
+    ? await supabase.storage.from("photos").remove(paths)
+    : { error: null };
+  revalidatePath("/memories");
+  revalidatePath(`/memories/${parsedId.data}`);
+  redirect(cleanupError ? "/memories?cleanup=failed" : "/memories?deleted=album");
+}
+
 async function getCoupleId(userId: string): Promise<string> {
   const supabase = await createClient();
   const { data, error } = await supabase.from("couple_members").select("couple_id").eq("user_id", userId).maybeSingle();
@@ -391,7 +528,6 @@ async function uploadJpeg(
 export async function uploadMemoryPhoto(_previous: ActionState, formData: FormData): Promise<ActionState> {
   const user = await requireUser();
   const albumId = z.string().uuid().safeParse(value(formData, "album_id"));
-  const caption = value(formData, "caption").trim().slice(0, 200);
   if (!albumId.success) return fail("Choose an album for this photo.");
   const rawPhotos = formData.getAll("photo").filter((entry) => !(entry instanceof File && entry.name === "" && entry.size === 0));
   const rawThumbnails = formData.getAll("thumbnail").filter((entry) => !(entry instanceof File && entry.name === "" && entry.size === 0));
@@ -441,7 +577,7 @@ export async function uploadMemoryPhoto(_previous: ActionState, formData: FormDa
           album_id: albumId.data,
           storage_path: storagePath,
           thumb_path: thumbPath,
-          caption: caption || null,
+          caption: null,
           size_bytes: photo.size,
         };
       } catch (error) {
@@ -479,6 +615,38 @@ export async function uploadMemoryPhoto(_previous: ActionState, formData: FormDa
   revalidatePath("/memories");
   revalidatePath("/notifications");
   redirect(`/memories/${albumId.data}`);
+}
+
+export async function deleteMemoryPhoto(albumId: string, photoId: string): Promise<never> {
+  const parsedAlbumId = z.string().uuid().safeParse(albumId);
+  const parsedPhotoId = z.string().uuid().safeParse(photoId);
+  if (!parsedAlbumId.success || !parsedPhotoId.success) throw new Error("Choose a valid photo.");
+  await requireUser();
+  const supabase = await createClient();
+  const { data: photo, error: photoError } = await supabase
+    .from("photos")
+    .select("storage_path, thumb_path")
+    .eq("id", parsedPhotoId.data)
+    .eq("album_id", parsedAlbumId.data)
+    .maybeSingle();
+  if (photoError) throw new Error(`Could not load photo before deleting it: ${photoError.message}`);
+  if (!photo) throw new Error("This photo is no longer available.");
+
+  const { data: deletedPhoto, error: deleteError } = await supabase
+    .from("photos")
+    .delete()
+    .eq("id", parsedPhotoId.data)
+    .eq("album_id", parsedAlbumId.data)
+    .select("id")
+    .maybeSingle();
+  if (deleteError) throw new Error(`Could not delete photo: ${deleteError.message}`);
+  if (!deletedPhoto) throw new Error("This photo is no longer available.");
+
+  const paths = [...new Set([photo.storage_path, photo.thumb_path].filter((path): path is string => Boolean(path)))];
+  const { error: cleanupError } = await supabase.storage.from("photos").remove(paths);
+  revalidatePath(`/memories/${parsedAlbumId.data}`);
+  revalidatePath("/memories");
+  redirect(cleanupError ? `/memories/${parsedAlbumId.data}?cleanup=failed` : `/memories/${parsedAlbumId.data}?deleted=photo`);
 }
 
 export async function updateProfileSettings(_previous: ActionState, formData: FormData): Promise<ActionState> {

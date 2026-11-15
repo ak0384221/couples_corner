@@ -22,15 +22,24 @@ function MemoriesLoading() {
   );
 }
 
-export default function MemoriesPage() {
+export default function MemoriesPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ cleanup?: string; deleted?: string }>;
+}) {
   return (
     <Suspense fallback={<MemoriesLoading />}>
-      <MemoriesContent />
+      <MemoriesContent searchParams={searchParams} />
     </Suspense>
   );
 }
 
-async function MemoriesContent() {
+async function MemoriesContent({
+  searchParams,
+}: {
+  searchParams: Promise<{ cleanup?: string; deleted?: string }>;
+}) {
+  const query = await searchParams;
   const user = await requireUser();
   const supabase = await createClient();
   const [membershipResult, albumsResult] = await Promise.all([
@@ -94,10 +103,15 @@ async function MemoriesContent() {
   return (
     <AppFrame title="Our memories">
       <div className="space-y-4">
-        <Card className="bg-blush">
-          <p className="text-sm font-bold">Little moments, kept close.</p>
-          <p className="mt-1 text-sm text-ink-soft">Only small, private photo copies are stored here.</p>
-        </Card>
+        {query.cleanup === "failed" ? (
+          <Card className="border-primary/50 text-sm">
+            <p role="status">Album deleted, but some stored image files could not be removed. Please try again later or contact support.</p>
+          </Card>
+        ) : null}
+        {query.deleted === "album" ? (
+          <Card className="border-primary/50 text-sm"><p role="status">Album and photos deleted.</p></Card>
+        ) : null}
+        <p className="memory-tagline">Little moments, kept close.</p>
         <div className="grid grid-cols-2 gap-3">
           {albumRows.map((album, index) => {
             const cover = signedByAlbum.get(album.id);

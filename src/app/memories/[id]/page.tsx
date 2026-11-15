@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { AlbumManagement } from "@/components/album-management";
 import { MemoryPhotoForm } from "@/components/memory-photo-form";
 import { PhotoGallery } from "@/components/photo-gallery";
 import { AppFrame } from "@/components/app-frame";
@@ -6,8 +7,14 @@ import { Card } from "@/components/ui";
 import { requireUser } from "@/lib/supabase/auth";
 import { createClient } from "@/lib/supabase/server";
 
-export default async function AlbumPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params;
+export default async function AlbumPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ id: string }>;
+  searchParams: Promise<{ cleanup?: string; deleted?: string }>;
+}) {
+  const [{ id }, query] = await Promise.all([params, searchParams]);
   const user = await requireUser();
   const supabase = await createClient();
   const [membershipResult, albumResult] = await Promise.all([
@@ -23,7 +30,7 @@ export default async function AlbumPage({ params }: { params: Promise<{ id: stri
 
   const { data: photos, error: photosError } = await supabase
     .from("photos")
-    .select("id, storage_path, thumb_path, caption, created_at")
+    .select("id, storage_path, thumb_path, created_at")
     .eq("album_id", id)
     .order("created_at", { ascending: true });
   if (photosError) throw new Error(`Could not load photos: ${photosError.message}`);
@@ -45,20 +52,29 @@ export default async function AlbumPage({ params }: { params: Promise<{ id: stri
     const url = urls.get(photo.storage_path);
     const thumbnailUrl = urls.get(photo.thumb_path ?? photo.storage_path) ?? null;
     if (!url) throw new Error("Could not create a private link for every album photo.");
-    return { id: photo.id, url, thumbnailUrl, caption: photo.caption };
+    return { id: photo.id, url, thumbnailUrl };
   });
 
   return (
     <AppFrame title={album.title} backHref="/memories">
       <div className="space-y-4">
-        <Card className="flex items-center justify-between gap-3 p-3">
+        {query.cleanup === "failed" ? (
+          <Card className="border-primary/50 text-sm">
+            <p role="status">The item was deleted, but some stored image files could not be removed. Please try again later or contact support.</p>
+          </Card>
+        ) : null}
+        {query.deleted === "photo" ? (
+          <Card className="border-primary/50 text-sm"><p role="status">Photo deleted.</p></Card>
+        ) : null}
+        <div className="flex items-center justify-between gap-3 border-b border-line pb-3">
           <div className="min-w-0">
-            <p className="truncate font-bold">{new Date(`${album.album_date}T12:00:00`).toLocaleDateString("en", { month: "long", day: "numeric", year: "numeric" })}</p>
-            <p className="mt-1 text-sm text-ink-soft">{gallery.length} {gallery.length === 1 ? "photo" : "photos"}</p>
+            <p className="font-bold">{new Date(`${album.album_date}T12:00:00`).toLocaleDateString("en", { month: "long", day: "numeric", year: "numeric" })}</p>
+            <p className="mt-0.5 text-sm text-ink-soft">{gallery.length} {gallery.length === 1 ? "photo" : "photos"}</p>
           </div>
-          <MemoryPhotoForm albumId={album.id} />
-        </Card>
-        {gallery.length ? <PhotoGallery photos={gallery} albumTitle={album.title} /> : (
+          <AlbumManagement albumId={album.id} title={album.title} albumDate={album.album_date} key={`${album.id}-${album.title}-${album.album_date}`} />
+        </div>
+        <MemoryPhotoForm albumId={album.id} />
+        {gallery.length ? <PhotoGallery photos={gallery} albumId={album.id} albumTitle={album.title} /> : (
           <Card className="text-center text-sm text-ink-soft">Choose a few photos to start this album.</Card>
         )}
       </div>

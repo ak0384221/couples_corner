@@ -3,19 +3,22 @@
 import { useActionState } from "react";
 import { createDate } from "@/app/actions";
 import { initialActionState } from "@/lib/action-state";
-import { Card, ChoiceGroup, ErrorMessage, Field, SubmitButton } from "@/components/ui";
+import { DateChoiceGroup } from "@/components/date-choice-group";
+import { Card, ErrorMessage, Field, SubmitButton } from "@/components/ui";
+import type { DateOption, DateOptionCategory } from "@/lib/date-options";
 
 type Place = { id: string; name: string; address: string | null; visit_count: number };
 
-export function DateForm({ places }: { places: Place[] }) {
+export function DateForm({ places, options }: { places: Place[]; options: DateOption[] }) {
   const [state, formAction, pending] = useActionState(createDate, initialActionState);
+  const choices = (category: DateOptionCategory) => options.filter((option) => option.category === category);
   return (
     <form action={formAction} className="space-y-4">
       <Card>
         <h2 className="text-xl font-bold">What are we feeling today?</h2>
         <p className="mt-1 text-sm text-ink-soft">Pick a vibe, then the plan.</p>
-        <ChoiceGroup label="Mood" name="mood" options={["Cozy", "Romantic", "Adventurous", "Silly"]} />
-        <ChoiceGroup label="What sounds fun?" name="activity" options={["Walk", "Cafe", "Movie", "Picnic", "Boat ride"]} />
+        <DateChoiceGroup label="Mood" name="mood" category="mood" options={choices("mood")} />
+        <DateChoiceGroup label="What sounds fun?" name="activity" category="activity" options={choices("activity")} />
       </Card>
 
       <Card>
@@ -42,7 +45,7 @@ export function DateForm({ places }: { places: Place[] }) {
             Save this place to Our places
           </label>
         </div>
-        <ChoiceGroup label="Craving?" name="food" options={["Biryani", "Fuchka", "Pasta", "Dessert", "Coffee"]} />
+        <DateChoiceGroup label="Craving?" name="food" category="food" options={choices("food")} />
       </Card>
 
       <Card>
@@ -52,16 +55,16 @@ export function DateForm({ places }: { places: Place[] }) {
           <Field label="The day" name="day" type="date" required />
           <Field label="The time" name="start_time" type="time" required />
         </div>
-        <ChoiceGroup label="Time of day" name="time_label" options={["Golden hour", "Sunset", "Evening", "Late night"]} />
+        <DateChoiceGroup label="Time of day" name="time_label" category="time_label" options={choices("time_label")} />
         <Field label="Give your date a name (optional)" name="name" placeholder="A little night out" maxLength={80} />
       </Card>
 
       <Card>
         <h2 className="text-xl font-bold">What are we wearing?</h2>
-        <ChoiceGroup label="Your outfit" name="creator_outfit_style" options={["Three-piece", "Top and jeans", "Saree", "Kurti"]} />
-        <ChoiceGroup label="Your color" name="creator_outfit_color" options={["Rose", "Sky", "Sage", "Lilac", "Butter"]} />
-        <ChoiceGroup label="Your pick for your partner" name="partner_outfit_style" options={["Panjabi", "T-shirt", "Shirt", "Polo"]} />
-        <ChoiceGroup label="Suggested color" name="partner_outfit_color" options={["Navy", "Cream", "Black", "Maroon", "Olive"]} />
+        <DateChoiceGroup label="Your outfit" name="creator_outfit_style" category="creator_outfit_style" options={choices("creator_outfit_style")} />
+        <DateChoiceGroup label="Your color" name="creator_outfit_color" category="creator_outfit_color" options={choices("creator_outfit_color")} />
+        <DateChoiceGroup label="Your pick for your partner" name="partner_outfit_style" category="partner_outfit_style" options={choices("partner_outfit_style")} />
+        <DateChoiceGroup label="Suggested color" name="partner_outfit_color" category="partner_outfit_color" options={choices("partner_outfit_color")} />
       </Card>
 
       <ErrorMessage>{state.error}</ErrorMessage>

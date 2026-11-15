@@ -5,44 +5,30 @@ import { uploadMemoryPhoto } from "@/app/actions";
 import { PhotoInput } from "@/components/photo-upload";
 import { initialActionState } from "@/lib/action-state";
 import { MAX_MEMORY_PHOTOS } from "@/lib/photo-limits";
-import { Field } from "@/components/ui";
 
 export function MemoryPhotoForm({ albumId }: { albumId: string }) {
   const [state, formAction, pending] = useActionState(uploadMemoryPhoto, initialActionState);
   const [selectedCount, setSelectedCount] = useState(0);
-  const [showCaption, setShowCaption] = useState(false);
   const selectionChanged = useCallback((count: number) => setSelectedCount(count), []);
 
   return (
-    <form action={formAction} className="min-w-0 flex-1 space-y-2">
+    <form action={formAction} className="min-w-0 space-y-3">
       <input type="hidden" name="album_id" value={albumId} />
-      <div className="flex items-center justify-end gap-2">
-        <PhotoInput
-          multiple
-          maxFiles={MAX_MEMORY_PHOTOS}
-          uploadPending={pending}
-          onSelectionCountChange={selectionChanged}
-        />
-        {selectedCount ? (
-          <button type="submit" className="primary-button shrink-0 px-3 py-2 text-sm" disabled={pending}>
-            {pending ? "Uploading…" : `Upload ${selectedCount} ${selectedCount === 1 ? "photo" : "photos"}`}
-          </button>
-        ) : null}
-      </div>
+      <PhotoInput
+        multiple
+        maxFiles={MAX_MEMORY_PHOTOS}
+        uploadPending={pending}
+        onSelectionCountChange={selectionChanged}
+      />
       {selectedCount ? (
-        <button
-          type="button"
-          className="text-xs font-bold text-primary underline"
-          onClick={() => setShowCaption((visible) => !visible)}
-          aria-expanded={showCaption}
-        >
-          {showCaption ? "Hide caption" : "Add caption"}
-        </button>
+        <div className="flex justify-end">
+          <button type="submit" className="primary-button shrink-0 px-4 py-2 text-sm shadow-sm" disabled={pending}>
+            {pending ? "Uploading…" : `Upload ${selectedCount} ${selectedCount === 1 ? "photo" : "photos"} ↑`}
+          </button>
+        </div>
       ) : null}
-      {showCaption && selectedCount ? (
-        <Field label="Caption for all photos (optional)" name="caption" placeholder="A little thing to remember" maxLength={200} />
-      ) : null}
-      <p role="status" aria-live="polite" className="text-xs text-danger">{state.error}</p>
+      {selectedCount ? <p className="text-xs text-ink-soft">You can remove any photo before uploading.</p> : null}
+      {state.error ? <p role="alert" className="text-sm font-semibold text-danger">{state.error}</p> : null}
     </form>
   );
 }

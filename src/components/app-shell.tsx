@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import { AppLoading } from "@/components/app-loading";
+import { NavigationHistoryProvider } from "@/components/navigation-history";
 import { getCurrentUser } from "@/lib/supabase/auth";
 import { createClient } from "@/lib/supabase/server";
 
@@ -30,7 +31,9 @@ export async function AppShell({ children }: { children: React.ReactNode }) {
       data-font={theme.theme_font}
       data-font-color={theme.theme_font_color}
     >
-      <Suspense fallback={<AppLoading />}>{children}</Suspense>
+      <NavigationHistoryProvider>
+        <Suspense fallback={<AppLoading />}>{children}</Suspense>
+      </NavigationHistoryProvider>
     </div>
   );
 }
