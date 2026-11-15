@@ -5,8 +5,6 @@ import { Card } from "@/components/ui";
 import { requireUser } from "@/lib/supabase/auth";
 import { createClient } from "@/lib/supabase/server";
 
-export const dynamic = "force-dynamic";
-
 const descriptions: Record<string, string> = {
   pair_request_received: "wants to pair with you",
   paired: "You are paired. Your little corner is ready.",

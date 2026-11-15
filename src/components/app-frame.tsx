@@ -1,6 +1,6 @@
 import Link from "next/link";
+import { BottomNavigation } from "@/components/bottom-navigation";
 import { Heart } from "@/components/heart";
-import { t } from "@/lib/text";
 import { createClient } from "@/lib/supabase/server";
 
 export async function AppFrame({
@@ -41,11 +41,7 @@ export async function AppFrame({
         </Link>
       </header>
       {children}
-      <nav className="bottom-nav" aria-label="Main navigation">
-        <Link href="/memories"><span aria-hidden="true">▧</span>Memories</Link>
-        <Link href="/"><span aria-hidden="true">♡</span>Dates</Link>
-        <Link href="/profile"><span aria-hidden="true">✦</span>{t.nav.profile}</Link>
-      </nav>
+      <BottomNavigation />
     </div>
   );
 }

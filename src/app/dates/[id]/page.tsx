@@ -7,8 +7,6 @@ import { requireUser } from "@/lib/supabase/auth";
 import { createClient } from "@/lib/supabase/server";
 import { EXTERNAL_LINK_PROPS, mapsOpenUrl } from "@/lib/validation/maps-url";
 
-export const dynamic = "force-dynamic";
-
 export default async function DateDetailPage({
   params,
   searchParams,

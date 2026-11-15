@@ -7,8 +7,6 @@ import { requireUser } from "@/lib/supabase/auth";
 import { createClient } from "@/lib/supabase/server";
 import { EMAIL_DELIVERY_PAUSED } from "@/lib/notifications/email";
 
-export const dynamic = "force-dynamic";
-
 export default async function SettingsPage() {
   const user = await requireUser();
   const supabase = await createClient();

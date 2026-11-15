@@ -1,9 +1,6 @@
 import { requireUser } from "@/lib/supabase/auth";
 import { createClient } from "@/lib/supabase/server";
 
-export const runtime = "nodejs";
-export const dynamic = "force-dynamic";
-
 function escapeCalendarText(value: string): string {
   return value
     .replace(/\\/g, "\\\\")

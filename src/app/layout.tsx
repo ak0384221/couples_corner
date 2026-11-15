@@ -1,10 +1,10 @@
 import type { Metadata, Viewport } from "next";
 import { Quicksand } from "next/font/google";
+import { Suspense } from "react";
 import "./globals.css";
 import { AppShell } from "@/components/app-shell";
 import { t } from "@/lib/text";
-import { getCurrentUser } from "@/lib/supabase/auth";
-import { createClient } from "@/lib/supabase/server";
+import { AppLoading } from "@/components/app-loading";
 
 const quicksand = Quicksand({
   subsets: ["latin"],
@@ -24,35 +24,16 @@ export const viewport: Viewport = {
   themeColor: "#fff3f6",
 };
 
-export default async function RootLayout({ children }: { children: React.ReactNode }) {
-  const user = await getCurrentUser();
-  let theme = {
-    theme_mode: "pink",
-    theme_accent: "rose",
-    theme_font: "soft",
-    theme_font_color: "cocoa",
-  };
-  if (user) {
-    const supabase = await createClient();
-    const { data: profile, error } = await supabase
-      .from("profiles")
-      .select("theme_mode, theme_accent, theme_font, theme_font_color")
-      .eq("id", user.id)
-      .maybeSingle();
-    if (error) throw new Error(`Could not load appearance preferences: ${error.message}`);
-    if (profile) theme = profile;
-  }
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html
       lang="en"
       className={quicksand.variable}
-      data-theme={theme.theme_mode}
-      data-accent={theme.theme_accent}
-      data-font={theme.theme_font}
-      data-font-color={theme.theme_font_color}
     >
       <body>
-        <AppShell>{children}</AppShell>
+        <Suspense fallback={<AppLoading />}>
+          <AppShell>{children}</AppShell>
+        </Suspense>
       </body>
     </html>
   );

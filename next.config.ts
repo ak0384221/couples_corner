@@ -45,6 +45,8 @@ const securityHeaders = [
 const nextConfig: NextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
+  cacheComponents: true,
+  partialPrefetching: true,
   experimental: {
     serverActions: { bodySizeLimit: "2mb" },
   },

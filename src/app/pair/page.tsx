@@ -9,7 +9,6 @@ import { requireUser } from "@/lib/supabase/auth";
 import { createClient } from "@/lib/supabase/server";
 import { z } from "zod";
 
-export const dynamic = "force-dynamic";
 type SearchParams = Promise<{ username?: string; sent?: string; declined?: string; email?: string; optional?: string }>;
 
 export default async function PairPage({ searchParams }: { searchParams: SearchParams }) {

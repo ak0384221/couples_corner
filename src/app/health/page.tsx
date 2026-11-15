@@ -2,8 +2,6 @@
 import { notFound } from "next/navigation";
 import { t } from "@/lib/text";
 
-export const dynamic = "force-dynamic";
-
 type Check = {
   configured: boolean;
   reachable: boolean;

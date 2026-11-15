@@ -39,14 +39,14 @@
   --font-body: var(--font-quicksand), ui-rounded, system-ui, sans-serif;
 }
 
-[data-theme="light"] {
+.app-column[data-theme="light"] {
   --page: #ffffff;
   --card: #ffffff;
   --blush: #fbeef2;
   --line: #f1d9e0;
 }
 
-[data-theme="dark"] {
+.app-column[data-theme="dark"] {
   --page: #1f1a1d;
   --card: #2b2428;
   --blush: #3a2d33;
@@ -56,21 +56,21 @@
 }
 
 /* accent colors: deep enough for white button text (checked again in Phase 7) */
-[data-accent="rose"] { --primary: #c2325e; --heart: #e8557a; }
-[data-accent="lilac"] { --primary: #6d4fc2; --heart: #9a7be8; }
-[data-accent="sky"] { --primary: #1f6fb8; --heart: #5aa5ec; }
-[data-accent="sage"] { --primary: #2f7d55; --heart: #5fb68a; }
-[data-accent="butter"] { --primary: #946200; --heart: #e0b030; }
+.app-column[data-accent="rose"] { --primary: #c2325e; --heart: #e8557a; }
+.app-column[data-accent="lilac"] { --primary: #6d4fc2; --heart: #9a7be8; }
+.app-column[data-accent="sky"] { --primary: #1f6fb8; --heart: #5aa5ec; }
+.app-column[data-accent="sage"] { --primary: #2f7d55; --heart: #5fb68a; }
+.app-column[data-accent="butter"] { --primary: #946200; --heart: #e0b030; }
 
 /* font color */
-[data-font-color="cocoa"] { --ink: #3d2a33; }
-[data-font-color="black"] { --ink: #111111; }
-[data-font-color="plum"] { --ink: #5a2a4f; }
-[data-font-color="navy"] { --ink: #1e2a47; }
-[data-theme="dark"][data-font-color] { --ink: #f7e9ee; } /* dark mode keeps light text */
+.app-column[data-font-color="cocoa"] { --ink: #3d2a33; }
+.app-column[data-font-color="black"] { --ink: #111111; }
+.app-column[data-font-color="plum"] { --ink: #5a2a4f; }
+.app-column[data-font-color="navy"] { --ink: #1e2a47; }
+.app-column[data-theme="dark"][data-font-color] { --ink: #f7e9ee; } /* dark mode keeps light text */
 
 /* font style: Soft is Quicksand. The other three are added with the Appearance screen. */
-[data-font="soft"] { --font-body: var(--font-quicksand), ui-rounded, system-ui, sans-serif; }
+.app-column[data-font="soft"] { --font-body: var(--font-quicksand), ui-rounded, system-ui, sans-serif; }
 
 @theme inline {
   --color-page: var(--page);
@@ -300,12 +300,25 @@ body {
   font-size: 0.72rem;
   font-weight: 700;
   gap: 0.1rem;
+  justify-content: center;
   min-width: 72px;
+  padding: 0.35rem 0.8rem;
+  transition: background-color 120ms ease, color 120ms ease;
+}
+
+.bottom-nav a.active {
+  background: var(--blush);
+  border-radius: var(--radius-pill);
+  color: var(--primary);
 }
 
 .bottom-nav a span {
   color: var(--primary);
   font-size: 1.15rem;
+}
+
+.bottom-nav a.active span {
+  color: var(--primary);
 }
 
 .status-pill {
@@ -329,15 +342,15 @@ body {
   color: #66545c;
 }
 
-[data-font="classic"] {
+.app-column[data-font="classic"] {
   --font-body: Georgia, "Times New Roman", serif;
 }
 
-[data-font="handwritten"] {
+.app-column[data-font="handwritten"] {
   --font-body: "Comic Sans MS", "Bradley Hand", cursive;
 }
 
-[data-font="simple"] {
+.app-column[data-font="simple"] {
   --font-body: Arial, Helvetica, sans-serif;
 }
 

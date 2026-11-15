@@ -6,8 +6,6 @@ import { Card } from "@/components/ui";
 import { requireUser } from "@/lib/supabase/auth";
 import { createClient } from "@/lib/supabase/server";
 
-export const dynamic = "force-dynamic";
-
 export default async function MemoriesPage() {
   const user = await requireUser();
   const supabase = await createClient();
