@@ -14,8 +14,8 @@ export const getCurrentUser = cache(async function getCurrentUser() {
   return user;
 });
 
-export async function requireUser() {
+export const requireUser = cache(async function requireUser() {
   const user = await getCurrentUser();
   if (!user) redirect("/login");
   return user;
-}
+});

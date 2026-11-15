@@ -11,6 +11,10 @@ export function PasswordForm() {
   return (
     <form action={formAction} className="space-y-3">
       <label className="field-label">
+        <span>Current password</span>
+        <PasswordInput name="current_password" required autoComplete="current-password" />
+      </label>
+      <label className="field-label">
         <span>New password</span>
         <PasswordInput name="password" required minLength={12} maxLength={128} autoComplete="new-password" />
       </label>

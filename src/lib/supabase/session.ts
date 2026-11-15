@@ -41,12 +41,12 @@ export async function updateSession(request: NextRequest) {
   if (user && !isPublic(request.nextUrl.pathname)) {
     const { data: assurance } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
     if (assurance?.nextLevel === "aal2" && assurance.currentLevel !== "aal2") {
-      const url = request.nextUrl.clone();
-      url.pathname = "/login";
-      url.search = "?mfa=1";
-      const redirect = NextResponse.redirect(url);
-      response.cookies.getAll().forEach((c) => redirect.cookies.set(c));
-      return redirect;
+        const url = request.nextUrl.clone();
+        url.pathname = "/login";
+        url.search = "?mfa=1";
+        const redirect = NextResponse.redirect(url);
+        response.cookies.getAll().forEach((c) => redirect.cookies.set(c));
+        return redirect;
     }
   }
 

@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { createClient as createAuthClient } from "@supabase/supabase-js";
 import { z } from "zod";
 import { requireUser } from "@/lib/supabase/auth";
 import { createClient } from "@/lib/supabase/server";
@@ -599,10 +600,33 @@ export async function markAllNotificationsRead() {
 }
 
 export async function changePassword(_previous: ActionState, formData: FormData): Promise<ActionState> {
+  const user = await requireUser();
+  const currentPassword = value(formData, "current_password");
   const password = value(formData, "password");
+  if (!currentPassword) return fail("Enter your current password.");
   if (password.length < 12 || password.length > 128) return fail("Use a password between 12 and 128 characters.");
+
+  const email = user.email;
+  if (!email) return fail("Your account does not have an email address to verify.");
+
+  const verifier = createAuthClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    { auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false } },
+  );
+  const { data: verification, error: verificationError } = await verifier.auth.signInWithPassword({
+    email,
+    password: currentPassword,
+  });
+  if (verificationError) {
+    if (verificationError.code === "invalid_credentials") return fail("Your current password is incorrect.");
+    return fail(`Could not verify your current password: ${verificationError.message}`);
+  }
+  if (verification.user.id !== user.id) return fail("Your current password is incorrect.");
+
   const supabase = await createClient();
   const { error } = await supabase.auth.updateUser({ password });
   if (error) return fail(`Could not change your password: ${error.message}`);
+  revalidatePath("/settings");
   return { error: null, success: "Password updated." };
 }

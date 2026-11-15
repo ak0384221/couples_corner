@@ -104,7 +104,7 @@ export function LoginForm() {
             />
           </label>
           <button className="primary-button w-full" disabled={busy}>
-            {busy ? "Checking…" : "Verify and open our memories"}
+            {busy ? "Checking…" : "Verify and continue"}
           </button>
         </form>
       ) : (
