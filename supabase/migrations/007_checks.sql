@@ -88,7 +88,7 @@ from pg_policies
 where schemaname = 'storage' and tablename = 'objects' and policyname like 'photos\_%'
 order by policyname;
 
--- 11) Bucket settings. EXPECT: public = false, file_size_limit = 1048576, allowed = {image/jpeg}.
+-- 11) Bucket settings. EXPECT: public = false, file_size_limit = 409600, allowed = {image/jpeg}.
 select id, public, file_size_limit, allowed_mime_types
 from storage.buckets
 where id = 'photos';

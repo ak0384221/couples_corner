@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { AppFrame } from "@/components/app-frame";
@@ -5,22 +6,38 @@ import { Card } from "@/components/ui";
 import { requireUser } from "@/lib/supabase/auth";
 import { createClient } from "@/lib/supabase/server";
 
-export default async function HomePage() {
+function HomeLoading() {
+  return (
+    <AppFrame title="Our little corner">
+      <div className="space-y-4" aria-label="Loading dates">
+        <div className="h-36 animate-pulse rounded-card border border-line bg-card" />
+        <div className="h-24 animate-pulse rounded-card border border-line bg-card" />
+        <div className="h-24 animate-pulse rounded-card border border-line bg-card" />
+      </div>
+    </AppFrame>
+  );
+}
+
+export default function HomePage() {
+  return (
+    <Suspense fallback={<HomeLoading />}>
+      <HomeContent />
+    </Suspense>
+  );
+}
+
+async function HomeContent() {
   const user = await requireUser();
   const supabase = await createClient();
-  const { data: profile, error: profileError } = await supabase
-    .from("profiles")
-    .select("id, name")
-    .eq("id", user.id)
-    .maybeSingle();
+  const [profileResult, membershipResult] = await Promise.all([
+    supabase.from("profiles").select("id, name").eq("id", user.id).maybeSingle(),
+    supabase.from("couple_members").select("couple_id").eq("user_id", user.id).maybeSingle(),
+  ]);
+  const { data: profile, error: profileError } = profileResult;
   if (profileError) throw new Error(`Could not load your profile: ${profileError.message}`);
   if (!profile) redirect("/profile/setup");
 
-  const { data: membership, error: membershipError } = await supabase
-    .from("couple_members")
-    .select("couple_id")
-    .eq("user_id", user.id)
-    .maybeSingle();
+  const { data: membership, error: membershipError } = membershipResult;
   if (membershipError) throw new Error(`Could not load your pairing: ${membershipError.message}`);
 
   const { data: dates, error: datesError } = await supabase
@@ -87,8 +104,7 @@ export default async function HomePage() {
             <p className="mt-1 text-sm text-ink-soft">Plan your first date together.</p>
           </Card>
         )}
-        <div className="grid grid-cols-2 gap-3">
-          <Link href="/closet"><Card className="h-full"><p className="text-2xl">♧</p><p className="mt-2 font-bold">Our closet</p></Card></Link>
+        <div className="grid grid-cols-3 gap-3">
           <Link href="/memories"><Card className="h-full"><p className="text-2xl">▧</p><p className="mt-2 font-bold">Memories</p></Card></Link>
           <Link href="/settings"><Card className="h-full"><p className="text-2xl">⚙</p><p className="mt-2 font-bold">Settings</p></Card></Link>
           <Link href="/profile"><Card className="h-full"><p className="text-2xl">♡</p><p className="mt-2 font-bold">Profile</p></Card></Link>

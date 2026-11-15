@@ -8,7 +8,8 @@ import { requireUser } from "@/lib/supabase/auth";
 import { createClient } from "@/lib/supabase/server";
 import { EMAIL_DELIVERY_PAUSED, sendAppEmail } from "@/lib/notifications/email";
 import type { ActionState } from "@/lib/action-state";
-import { albumSchema, appearanceSchema, closetItemSchema, dateSchema, profileSchema } from "@/lib/validation/forms";
+import { albumSchema, appearanceSchema, dateSchema, profileSchema } from "@/lib/validation/forms";
+import { MAX_MEMORY_PHOTOS, MAX_PHOTO_BYTES } from "@/lib/photo-limits";
 
 function value(formData: FormData, key: string): string {
   const field = formData.get(key);
@@ -22,7 +23,7 @@ async function uploadAvatar(
 ): Promise<string | null> {
   const photo = formData.get("photo");
   if (!(photo instanceof File) || photo.size === 0) return null;
-  if (photo.size > 1_048_576) throw new Error("Choose a compressed photo no larger than 1 MB.");
+  if (photo.size > MAX_PHOTO_BYTES) throw new Error("Choose a compressed photo no larger than 400 KB.");
   const bytes = new Uint8Array(await photo.arrayBuffer());
   if (photo.type !== "image/jpeg" || bytes[0] !== 0xff || bytes[1] !== 0xd8) {
     throw new Error("Profile photos must be re-saved as JPEG before upload.");
@@ -362,152 +363,122 @@ async function getCoupleId(userId: string): Promise<string> {
   return data.couple_id;
 }
 
-async function uploadJpeg(formData: FormData, folder: "albums" | "closet") {
-  const user = await requireUser();
-  const photo = formData.get("photo");
-  if (!(photo instanceof File) || photo.size < 1 || photo.size > 1_048_576) {
-    throw new Error("Choose a compressed photo no larger than 1 MB.");
-  }
-  const bytes = new Uint8Array(await photo.arrayBuffer());
+async function validatedJpeg(value: FormDataEntryValue | undefined, label: string): Promise<File> {
+  if (!(value instanceof File) || value.size < 1) throw new Error(`${label} is missing.`);
+  const photo = value;
+  if (photo.size > MAX_PHOTO_BYTES) throw new Error(`${label} must be 400 KB or smaller.`);
+  const bytes = new Uint8Array(await photo.slice(0, 2).arrayBuffer());
   if (photo.type !== "image/jpeg" || bytes[0] !== 0xff || bytes[1] !== 0xd8) {
-    throw new Error("Photos must be re-saved as JPEG before upload.");
+    throw new Error(`${label} must be re-saved as JPEG before upload.`);
   }
-  const coupleId = await getCoupleId(user.id);
-  const path = `${coupleId}/${folder}/${crypto.randomUUID()}.jpg`;
-  const supabase = await createClient();
+  return photo;
+}
+
+async function uploadJpeg(
+  photo: File,
+  path: string,
+  supabase: Awaited<ReturnType<typeof createClient>>,
+): Promise<void> {
+  const bytes = new Uint8Array(await photo.arrayBuffer());
   const { error } = await supabase.storage.from("photos").upload(path, bytes, {
     contentType: "image/jpeg",
     cacheControl: "3600",
     upsert: false,
   });
   if (error) throw new Error(`Photo upload failed: ${error.message}`);
-  return { supabase, path, size: photo.size };
 }
 
 export async function uploadMemoryPhoto(_previous: ActionState, formData: FormData): Promise<ActionState> {
+  const user = await requireUser();
   const albumId = z.string().uuid().safeParse(value(formData, "album_id"));
   const caption = value(formData, "caption").trim().slice(0, 200);
   if (!albumId.success) return fail("Choose an album for this photo.");
-  await requireUser();
-  const supabaseForPartner = await createClient();
-  const { data: partnerId, error: partnerError } = await supabaseForPartner.rpc("current_partner_id");
-  if (partnerError || !partnerId) return fail("Pair your accounts before adding shared memories.");
-  let uploaded: Awaited<ReturnType<typeof uploadJpeg>>;
+  const rawPhotos = formData.getAll("photo").filter((entry) => !(entry instanceof File && entry.name === "" && entry.size === 0));
+  const rawThumbnails = formData.getAll("thumbnail").filter((entry) => !(entry instanceof File && entry.name === "" && entry.size === 0));
+  if (rawPhotos.length > MAX_MEMORY_PHOTOS) return fail(`Choose no more than ${MAX_MEMORY_PHOTOS} photos at a time.`);
+  if (!rawPhotos.length) return fail("Choose at least one photo.");
+  if (rawThumbnails.length !== rawPhotos.length) return fail("Each photo needs its matching thumbnail. Please choose the photos again.");
+
+  let photos: File[];
+  let thumbnails: File[];
   try {
-    uploaded = await uploadJpeg(formData, "albums");
+    photos = await Promise.all(rawPhotos.map(async (photo, index) => {
+      return validatedJpeg(photo, `Photo ${index + 1}`);
+    }));
+    thumbnails = await Promise.all(rawThumbnails.map(async (thumbnail, index) => {
+      return validatedJpeg(thumbnail, `Thumbnail ${index + 1}`);
+    }));
   } catch (error) {
     if (error instanceof Error) return fail(error.message);
     throw error;
   }
-  const { supabase, path, size } = uploaded;
-  const { error } = await supabase.from("photos").insert({
-    album_id: albumId.data,
-    storage_path: path,
-    caption: caption || null,
-    size_bytes: size,
-  });
-  if (error) {
-    const { error: cleanupError } = await supabase.storage.from("photos").remove([path]);
-    if (cleanupError) return fail(`Photo record failed (${error.message}); temporary photo cleanup failed (${cleanupError.message}).`);
-    return fail(`Photo record failed: ${error.message}`);
+
+  const supabase = await createClient();
+  const { data: partnerId, error: partnerError } = await supabase.rpc("current_partner_id");
+  if (partnerError || !partnerId) return fail("Pair your accounts before adding shared memories.");
+  const coupleId = await getCoupleId(user.id);
+  const uploadedPaths: string[] = [];
+  const rows: { album_id: string; storage_path: string; thumb_path: string; caption: string | null; size_bytes: number }[] = [];
+  const uploadErrors: Error[] = [];
+  let nextIndex = 0;
+  const worker = async () => {
+    while (nextIndex < photos.length && !uploadErrors.length) {
+      const index = nextIndex++;
+      const photo = photos[index];
+      const thumbnail = thumbnails[index];
+      if (!photo || !thumbnail) {
+        uploadErrors.push(new Error("A photo or thumbnail is missing."));
+        break;
+      }
+      const storagePath = `${coupleId}/albums/${crypto.randomUUID()}.jpg`;
+      const thumbPath = `${coupleId}/albums/${crypto.randomUUID()}.jpg`;
+      try {
+        await uploadJpeg(photo, storagePath, supabase);
+        uploadedPaths.push(storagePath);
+        await uploadJpeg(thumbnail, thumbPath, supabase);
+        uploadedPaths.push(thumbPath);
+        rows[index] = {
+          album_id: albumId.data,
+          storage_path: storagePath,
+          thumb_path: thumbPath,
+          caption: caption || null,
+          size_bytes: photo.size,
+        };
+      } catch (error) {
+        uploadErrors.push(error instanceof Error ? error : new Error("Photo upload failed."));
+      }
+    }
+  };
+  await Promise.all(Array.from({ length: Math.min(3, photos.length) }, worker));
+
+  async function removeUploadedFiles(): Promise<string | null> {
+    if (!uploadedPaths.length) return null;
+    const { error } = await supabase.storage.from("photos").remove(uploadedPaths);
+    return error?.message ?? null;
+  }
+
+  const uploadError = uploadErrors[0];
+  if (uploadError) {
+    const cleanupError = await removeUploadedFiles();
+    return fail(cleanupError
+      ? `${uploadError.message} Temporary photo cleanup failed: ${cleanupError}`
+      : uploadError.message);
+  }
+
+  const { error: insertError } = await supabase
+    .from("photos")
+    .insert(rows);
+  if (insertError) {
+    const cleanupError = await removeUploadedFiles();
+    return fail(cleanupError
+      ? `Photo records failed (${insertError.message}); temporary photo cleanup failed (${cleanupError}).`
+      : `Photo records failed: ${insertError.message}`);
   }
   await sendAppEmail(partnerId, "photos_added");
   revalidatePath(`/memories/${albumId.data}`);
   revalidatePath("/memories");
   revalidatePath("/notifications");
   redirect(`/memories/${albumId.data}`);
-}
-
-export async function addClosetItem(_previous: ActionState, formData: FormData): Promise<ActionState> {
-  const parsed = closetItemSchema.safeParse({
-    kind: value(formData, "kind"),
-    name: value(formData, "name"),
-    mainColor: value(formData, "main_color"),
-  });
-  if (!parsed.success) return fail(parsed.error.issues[0]?.message ?? "Check the closet item.");
-  await requireUser();
-  let uploaded: Awaited<ReturnType<typeof uploadJpeg>>;
-  try {
-    uploaded = await uploadJpeg(formData, "closet");
-  } catch (error) {
-    if (error instanceof Error) return fail(error.message);
-    throw error;
-  }
-  const { supabase, path } = uploaded;
-  const { error } = await supabase.from("closet_items").insert({
-    photo_path: path,
-    kind: parsed.data.kind,
-    name: parsed.data.name,
-    main_color: parsed.data.mainColor || null,
-  });
-  if (error) {
-    const { error: cleanupError } = await supabase.storage.from("photos").remove([path]);
-    if (cleanupError) return fail(`Closet item failed (${error.message}); temporary photo cleanup failed (${cleanupError.message}).`);
-    return fail(`Closet item failed: ${error.message}`);
-  }
-  revalidatePath("/closet");
-  redirect("/closet");
-}
-
-export async function sendClosetPreference(formData: FormData) {
-  const dateId = z.string().uuid().safeParse(value(formData, "date_id"));
-  if (!dateId.success) throw new Error("Choose a date.");
-  const creatorItems = z.array(z.string().uuid()).max(8).safeParse(
-    formData.getAll("creator_item_id").filter((id): id is string => typeof id === "string"),
-  );
-  const partnerItems = z.array(z.string().uuid()).max(8).safeParse(
-    formData.getAll("partner_item_id").filter((id): id is string => typeof id === "string"),
-  );
-  if (!creatorItems.success || !partnerItems.success) throw new Error("Choose no more than eight pieces per person.");
-  if (creatorItems.data.length + partnerItems.data.length === 0) throw new Error("Choose at least one closet item.");
-  const supabase = await createClient();
-  const { error } = await supabase.rpc("send_closet_preference", {
-    p_date_id: dateId.data,
-    p_creator_item_ids: creatorItems.data,
-    p_partner_item_ids: partnerItems.data,
-  });
-  if (error) throw new Error(`Could not send outfit preference: ${databaseMessage(error.message)}`);
-  const { data: partnerId, error: partnerError } = await supabase.rpc("current_partner_id");
-  if (partnerError) throw new Error("Outfit preference saved, but we could not notify your partner.");
-  if (partnerId) await sendAppEmail(partnerId, "closet_preference_sent");
-  revalidatePath("/closet");
-  revalidatePath("/notifications");
-  redirect("/closet?sent=1");
-}
-
-export async function respondClosetPreference(formData: FormData) {
-  const preferenceId = z.string().uuid().safeParse(value(formData, "preference_id"));
-  if (!preferenceId.success) throw new Error("Invalid outfit request.");
-  const supabase = await createClient();
-  const { data: preference, error: preferenceError } = await supabase
-    .from("closet_preferences")
-    .select("created_by")
-    .eq("id", preferenceId.data)
-    .maybeSingle();
-  if (preferenceError || !preference) throw new Error("Outfit request not found.");
-  const answer = value(formData, "answer");
-  if (answer !== "accept" && answer !== "change") throw new Error("Choose whether to accept or change the outfit request.");
-  let error;
-  if (answer === "accept") {
-    ({ error } = await supabase.rpc("accept_closet_preference", { p_preference_id: preferenceId.data }));
-  } else {
-    const replacementIds = z.array(z.string().uuid()).max(8).safeParse(
-      formData.getAll("partner_item_id").filter((id): id is string => typeof id === "string"),
-    );
-    if (!replacementIds.success || replacementIds.data.length === 0) throw new Error("Choose between one and eight replacement pieces.");
-    ({ error } = await supabase.rpc("change_closet_preference", {
-      p_preference_id: preferenceId.data,
-      p_partner_item_ids: replacementIds.data,
-    }));
-  }
-  if (error) throw new Error(`Could not update outfit preference: ${databaseMessage(error.message)}`);
-  await sendAppEmail(
-    preference.created_by,
-    answer === "accept" ? "closet_preference_accepted" : "closet_preference_changed",
-  );
-  revalidatePath("/closet");
-  revalidatePath("/notifications");
-  redirect("/closet");
 }
 
 export async function updateProfileSettings(_previous: ActionState, formData: FormData): Promise<ActionState> {

@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import Link from "next/link";
 import { markAllNotificationsRead, markNotificationRead } from "@/app/actions";
 import { AppFrame } from "@/components/app-frame";
@@ -12,22 +13,38 @@ const descriptions: Record<string, string> = {
   date_confirmed: "confirmed your date",
   date_changed: "updated or suggested a change to your date",
   date_cancelled: "cancelled a date request",
-  closet_preference_sent: "sent you outfit ideas",
-  closet_preference_accepted: "accepted your outfit ideas",
-  closet_preference_changed: "suggested a different look",
   photos_added: "added new memories",
 };
 
 function notificationHref(type: string, id: string | null): string {
   if (!id) return "/";
   if (type === "date_requested" || type === "date_confirmed" || type === "date_changed" || type === "date_cancelled") return `/dates/${id}`;
-  if (type.startsWith("closet_preference")) return "/closet";
   if (type === "photos_added") return `/memories/${id}`;
   if (type.startsWith("pair") || type === "paired") return "/pair";
   return "/";
 }
 
-export default async function NotificationsPage() {
+function NotificationsLoading() {
+  return (
+    <AppFrame title="Notifications" backHref="/">
+      <div className="space-y-3" aria-label="Loading notifications">
+        {Array.from({ length: 3 }, (_, index) => (
+          <div className="h-24 animate-pulse rounded-card border border-line bg-card" key={index} />
+        ))}
+      </div>
+    </AppFrame>
+  );
+}
+
+export default function NotificationsPage() {
+  return (
+    <Suspense fallback={<NotificationsLoading />}>
+      <NotificationsContent />
+    </Suspense>
+  );
+}
+
+async function NotificationsContent() {
   const user = await requireUser();
   const supabase = await createClient();
   const { data: notifications, error } = await supabase.from("notifications").select("id, actor_id, event_type, ref_id, is_read, created_at").order("created_at", { ascending: false }).limit(50);

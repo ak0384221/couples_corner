@@ -10,9 +10,13 @@ import { EMAIL_DELIVERY_PAUSED } from "@/lib/notifications/email";
 export default async function SettingsPage() {
   const user = await requireUser();
   const supabase = await createClient();
-  const { data: profile, error } = await supabase.from("profiles").select("name, username, email_alerts, theme_mode, theme_font").eq("id", user.id).maybeSingle();
+  const [profileResult, membersResult] = await Promise.all([
+    supabase.from("profiles").select("name, username, email_alerts, theme_mode, theme_font").eq("id", user.id).maybeSingle(),
+    supabase.from("couple_members").select("couple_id").eq("user_id", user.id).maybeSingle(),
+  ]);
+  const { data: profile, error } = profileResult;
   if (error) throw new Error(`Could not load settings: ${error.message}`);
-  const { data: members, error: membersError } = await supabase.from("couple_members").select("couple_id").eq("user_id", user.id).maybeSingle();
+  const { data: members, error: membersError } = membersResult;
   if (membersError) throw new Error(`Could not load pairing: ${membersError.message}`);
   const emailConfigured = !EMAIL_DELIVERY_PAUSED && Boolean(
     process.env.RESEND_API_KEY &&

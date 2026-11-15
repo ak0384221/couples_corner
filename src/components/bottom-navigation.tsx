@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import Link, { useLinkStatus } from "next/link";
 import { usePathname } from "next/navigation";
 import { t } from "@/lib/text";
 
@@ -19,18 +19,39 @@ export function BottomNavigation() {
         const active = href === "/"
           ? pathname === "/"
           : pathname === href || pathname.startsWith(`${href}/`);
-        return (
-          <Link
-            key={href}
-            href={href}
-            className={active ? "active" : undefined}
-            aria-current={active ? "page" : undefined}
-          >
-            <span aria-hidden="true">{active ? activeIcon : icon}</span>
-            {label}
-          </Link>
-        );
+        return <NavigationItem key={href} {...{ href, label, icon, activeIcon, active }} />;
       })}
     </nav>
+  );
+}
+
+function NavigationItem({
+  href,
+  label,
+  icon,
+  activeIcon,
+  active,
+}: (typeof items)[number] & { active: boolean }) {
+  return (
+    <Link
+      href={href}
+      className={active ? "active" : undefined}
+      aria-current={active ? "page" : undefined}
+    >
+      <NavigationPending label={label} />
+      <span aria-hidden="true">{active ? activeIcon : icon}</span>
+      {label}
+    </Link>
+  );
+}
+
+function NavigationPending({ label }: { label: string }) {
+  const { pending } = useLinkStatus();
+
+  return (
+    <>
+      <span className="navigation-progress" data-pending={pending} aria-hidden="true" />
+      <span className="sr-only" aria-live="polite">{pending ? `Loading ${label}` : ""}</span>
+    </>
   );
 }

@@ -226,7 +226,8 @@ create policy albums_delete_couple on public.albums
   using (couple_id = (select public.current_couple_id()));
 
 grant select, delete on public.photos to authenticated;
-grant insert (album_id, storage_path, caption, size_bytes) on public.photos to authenticated;
+alter table public.photos add column if not exists thumb_path text;
+grant insert (album_id, storage_path, thumb_path, caption, size_bytes) on public.photos to authenticated;
 grant update (caption) on public.photos to authenticated;
 
 create policy photos_select_couple on public.photos

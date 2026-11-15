@@ -9,9 +9,6 @@ const eventCopy = {
   date_confirmed: "Your date was confirmed.",
   date_changed: "There is an update to your date plan.",
   date_cancelled: "A date request was cancelled.",
-  closet_preference_sent: "Outfit ideas are waiting for you.",
-  closet_preference_accepted: "Your outfit ideas were accepted.",
-  closet_preference_changed: "There is an update to your outfit ideas.",
   photos_added: "A new memory was added.",
 } as const;
 

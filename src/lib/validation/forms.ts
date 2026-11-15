@@ -40,12 +40,6 @@ export const albumSchema = z.object({
   albumDate: z.iso.date("Choose a valid album date."),
 });
 
-export const closetItemSchema = z.object({
-  kind: requiredText(30, "Choose an item type"),
-  name: requiredText(60, "Item name"),
-  mainColor: z.string().trim().max(20),
-});
-
 export const appearanceSchema = z.object({
   theme_mode: z.enum(["pink", "light", "dark"]),
   theme_font: z.enum(["soft", "classic", "handwritten", "simple"]),

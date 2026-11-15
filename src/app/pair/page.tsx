@@ -15,14 +15,24 @@ export default async function PairPage({ searchParams }: { searchParams: SearchP
   const user = await requireUser();
   const params = await searchParams;
   const supabase = await createClient();
-  const { data: profile, error: profileError } = await supabase.from("profiles").select("id, name").eq("id", user.id).maybeSingle();
+  const [profileResult, membershipResult] = await Promise.all([
+    supabase.from("profiles").select("id, name").eq("id", user.id).maybeSingle(),
+    supabase.from("couple_members").select("couple_id").eq("user_id", user.id).maybeSingle(),
+  ]);
+  const { data: profile, error: profileError } = profileResult;
   if (profileError) throw new Error(`Could not load your profile: ${profileError.message}`);
   if (!profile) redirect("/profile/setup");
-  const { data: membership, error: membershipError } = await supabase.from("couple_members").select("couple_id").eq("user_id", user.id).maybeSingle();
+  const { data: membership, error: membershipError } = membershipResult;
   if (membershipError) throw new Error(`Could not load pairing: ${membershipError.message}`);
   if (membership) redirect("/");
 
-  const { data: requestData, error: requestsError } = await supabase.rpc("get_my_pair_requests");
+  const [requestsResult, searchResult] = await Promise.all([
+    supabase.rpc("get_my_pair_requests"),
+    params.username
+      ? supabase.rpc("search_profile_by_username", { p_username: params.username })
+      : Promise.resolve({ data: null, error: null }),
+  ]);
+  const { data: requestData, error: requestsError } = requestsResult;
   if (requestsError) throw new Error(`Could not load pairing requests: ${requestsError.message}`);
   const requestSchema = z.array(z.object({
     request_id: z.string().uuid(),
@@ -40,7 +50,7 @@ export default async function PairPage({ searchParams }: { searchParams: SearchP
   const requests = parsedRequests.data;
   let matches: { id: string; name: string; username: string; bio: string | null; photo_path: string | null }[] = [];
   if (params.username) {
-    const { data, error } = await supabase.rpc("search_profile_by_username", { p_username: params.username });
+    const { data, error } = searchResult;
     if (error) throw new Error(`Could not search for that username: ${error.message}`);
     const profileSchema = z.array(z.object({
       id: z.string().uuid(),
@@ -59,12 +69,19 @@ export default async function PairPage({ searchParams }: { searchParams: SearchP
     ...incoming.map((request) => request.other_photo_path),
     ...matches.map((match) => match.photo_path),
   ].filter((path): path is string => Boolean(path));
-  const avatarUrls = await Promise.all(avatarPaths.map(async (path) => {
-    const { data, error } = await supabase.storage.from("photos").createSignedUrl(path, 3600);
-    if (error) throw new Error(`Could not create a private profile image link: ${error.message}`);
-    return [path, data.signedUrl] as const;
-  }));
-  const avatarMap = new Map(avatarUrls);
+  const uniqueAvatarPaths = [...new Set(avatarPaths)];
+  const { data: signedAvatars, error: avatarsError } = uniqueAvatarPaths.length
+    ? await supabase.storage.from("photos").createSignedUrls(uniqueAvatarPaths, 3600)
+    : { data: [], error: null };
+  if (avatarsError) throw new Error(`Could not create private profile image links: ${avatarsError.message}`);
+  const avatarMap = new Map<string, string>();
+  (signedAvatars ?? []).forEach((signed, index) => {
+    const path = uniqueAvatarPaths[index];
+    if (!path || signed.error || !signed.signedUrl) {
+      throw new Error(`Could not create a private profile image link: ${signed.error ?? "No link returned."}`);
+    }
+    avatarMap.set(path, signed.signedUrl);
+  });
 
   return (
     <AppFrame title={`Hi, ${profile.name}`}>

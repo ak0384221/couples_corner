@@ -1,6 +1,6 @@
 # Our little corner
 
-Private two-person site: dates, photo memories, closet. Source of truth: `docs/plan.md`.
+Private two-person site: dates and photo memories. Source of truth: `docs/plan.md`.
 UI screens: `docs/ui/Our_Date_Planner.pdf`. Status: **Phase 0 (setup) and Phase 1 (database SQL) only.**
 
 ## Run it (localhost only)

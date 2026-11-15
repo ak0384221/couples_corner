@@ -48,7 +48,7 @@ const nextConfig: NextConfig = {
   cacheComponents: true,
   partialPrefetching: true,
   experimental: {
-    serverActions: { bodySizeLimit: "2mb" },
+    serverActions: { bodySizeLimit: "4mb" },
   },
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];
