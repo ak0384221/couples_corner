@@ -1,0 +1,17 @@
+# secrets: must be ignored before the first commit
+.env
+.env*
+!.env.example
+
+# dependencies / build
+node_modules
+.next
+out
+build
+*.tsbuildinfo
+next-env.d.ts
+
+# misc
+.DS_Store
+npm-debug.log*
+.vercel

@@ -1,0 +1,346 @@
+@import "tailwindcss";
+
+/* ------------------------------------------------------------------
+   Design tokens taken from the 27 UI screens.
+   Per-person themes (Phase 7) work by changing data attributes on <html>:
+     data-theme="pink|light|dark"   data-accent="rose|lilac|sky|sage|butter"
+     data-font="soft|classic|handwritten|simple"   data-font-color="cocoa|black|plum|navy"
+   Phase 7 adds the contrast check that blocks unreadable combinations.
+   ------------------------------------------------------------------ */
+
+:root {
+  /* surfaces */
+  --page: #fff3f6; /* soft pink background */
+  --card: #ffffff;
+  --blush: #ffe3ea; /* tinted fills, selected cards */
+  --line: #ffd3de; /* card and chip borders */
+
+  /* text */
+  --ink: #3d2a33; /* cocoa */
+  --ink-soft: #7a5c66;
+
+  /* accent (rose is the default) */
+  --primary: #c2325e; /* deep rose: buttons, selected borders */
+  --on-primary: #ffffff;
+  --heart: #e8557a;
+
+  /* pastel palette used for photo tiles and color chips */
+  --lilac: #e4d8ff;
+  --sage: #d8efe2;
+  --butter: #fff0c7;
+  --sky: #9fcbff;
+
+  /* shape */
+  --radius-card: 28px;
+  --radius-field: 22px;
+  --radius-pill: 999px;
+
+  /* font */
+  --font-body: var(--font-quicksand), ui-rounded, system-ui, sans-serif;
+}
+
+[data-theme="light"] {
+  --page: #ffffff;
+  --card: #ffffff;
+  --blush: #fbeef2;
+  --line: #f1d9e0;
+}
+
+[data-theme="dark"] {
+  --page: #1f1a1d;
+  --card: #2b2428;
+  --blush: #3a2d33;
+  --line: #4a3a41;
+  --ink: #f7e9ee;
+  --ink-soft: #cbb0ba;
+}
+
+/* accent colors: deep enough for white button text (checked again in Phase 7) */
+[data-accent="rose"] { --primary: #c2325e; --heart: #e8557a; }
+[data-accent="lilac"] { --primary: #6d4fc2; --heart: #9a7be8; }
+[data-accent="sky"] { --primary: #1f6fb8; --heart: #5aa5ec; }
+[data-accent="sage"] { --primary: #2f7d55; --heart: #5fb68a; }
+[data-accent="butter"] { --primary: #946200; --heart: #e0b030; }
+
+/* font color */
+[data-font-color="cocoa"] { --ink: #3d2a33; }
+[data-font-color="black"] { --ink: #111111; }
+[data-font-color="plum"] { --ink: #5a2a4f; }
+[data-font-color="navy"] { --ink: #1e2a47; }
+[data-theme="dark"][data-font-color] { --ink: #f7e9ee; } /* dark mode keeps light text */
+
+/* font style: Soft is Quicksand. The other three are added with the Appearance screen. */
+[data-font="soft"] { --font-body: var(--font-quicksand), ui-rounded, system-ui, sans-serif; }
+
+@theme inline {
+  --color-page: var(--page);
+  --color-card: var(--card);
+  --color-blush: var(--blush);
+  --color-line: var(--line);
+  --color-ink: var(--ink);
+  --color-ink-soft: var(--ink-soft);
+  --color-primary: var(--primary);
+  --color-on-primary: var(--on-primary);
+  --color-heart: var(--heart);
+  --color-lilac: var(--lilac);
+  --color-sage: var(--sage);
+  --color-butter: var(--butter);
+  --color-sky: var(--sky);
+  --radius-card: var(--radius-card);
+  --radius-field: var(--radius-field);
+  --font-sans: var(--font-body);
+}
+
+html {
+  background: var(--page);
+}
+
+body {
+  background: var(--page);
+  color: var(--ink);
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Phone-width column, centered on bigger screens */
+.app-column {
+  margin-inline: auto;
+  width: 100%;
+  max-width: 430px;
+  min-height: 100dvh;
+  position: relative;
+}
+
+:focus-visible {
+  outline: 3px solid var(--primary);
+  outline-offset: 2px;
+}
+
+.primary-button,
+.secondary-button {
+  align-items: center;
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+  display: inline-flex;
+  font-size: 0.9rem;
+  font-weight: 700;
+  justify-content: center;
+  min-height: 48px;
+  padding: 0.75rem 1.15rem;
+  text-align: center;
+  transition: transform 120ms ease, filter 120ms ease;
+}
+
+.primary-button {
+  background: var(--primary);
+  color: var(--on-primary);
+}
+
+.secondary-button {
+  background: var(--blush);
+  border: 1px solid var(--line);
+  color: var(--ink);
+}
+
+.primary-button:hover,
+.secondary-button:hover {
+  filter: brightness(0.97);
+  transform: translateY(-1px);
+}
+
+.primary-button:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+
+.icon-button {
+  align-items: center;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-pill);
+  color: var(--primary);
+  display: inline-flex;
+  flex: 0 0 42px;
+  font-size: 1.25rem;
+  height: 42px;
+  justify-content: center;
+}
+
+.notification-button {
+  position: relative;
+}
+
+.notification-button > svg {
+  height: 25px;
+  width: 25px;
+}
+
+.notification-badge {
+  align-items: center;
+  background: var(--primary);
+  border: 2px solid var(--card);
+  border-radius: var(--radius-pill);
+  color: var(--on-primary);
+  display: inline-flex;
+  font-size: 0.62rem;
+  font-weight: 700;
+  height: 19px;
+  justify-content: center;
+  line-height: 1;
+  min-width: 19px;
+  padding-inline: 0.2rem;
+  position: absolute;
+  right: -5px;
+  top: -5px;
+}
+
+.field-label {
+  color: var(--ink);
+  display: flex;
+  flex-direction: column;
+  font-size: 0.85rem;
+  font-weight: 700;
+  gap: 0.45rem;
+}
+
+.field-input {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-field);
+  color: var(--ink);
+  font: inherit;
+  font-size: 0.95rem;
+  min-height: 48px;
+  padding: 0.75rem 0.9rem;
+  width: 100%;
+}
+
+.field-input::placeholder {
+  color: var(--ink-soft);
+  opacity: 0.8;
+}
+
+.password-input-wrap {
+  position: relative;
+}
+
+.password-input {
+  padding-right: 3.25rem;
+}
+
+.password-visibility-button {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  border-radius: var(--radius-pill);
+  color: var(--ink-soft);
+  cursor: pointer;
+  display: inline-flex;
+  height: 40px;
+  justify-content: center;
+  padding: 0.5rem;
+  position: absolute;
+  right: 0.45rem;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 40px;
+}
+
+.password-visibility-button:hover {
+  color: var(--primary);
+}
+
+.password-visibility-button svg {
+  height: 1.25rem;
+  width: 1.25rem;
+}
+
+.choice-chip {
+  align-items: center;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-pill);
+  color: var(--ink);
+  cursor: pointer;
+  display: inline-flex;
+  font-size: 0.85rem;
+  font-weight: 700;
+  min-height: 42px;
+  padding: 0.55rem 0.9rem;
+}
+
+.choice-chip:has(input:checked) {
+  background: var(--blush);
+  border-color: var(--primary);
+  box-shadow: inset 0 0 0 1px var(--primary);
+}
+
+.bottom-nav {
+  align-items: center;
+  backdrop-filter: blur(16px);
+  background: color-mix(in srgb, var(--card) 90%, transparent);
+  border-top: 1px solid var(--line);
+  bottom: 0;
+  display: flex;
+  justify-content: space-around;
+  left: 50%;
+  max-width: 430px;
+  padding: 0.55rem 0.7rem max(0.55rem, env(safe-area-inset-bottom));
+  position: fixed;
+  transform: translateX(-50%);
+  width: 100%;
+  z-index: 20;
+}
+
+.bottom-nav a {
+  align-items: center;
+  color: var(--ink-soft);
+  display: flex;
+  flex-direction: column;
+  font-size: 0.72rem;
+  font-weight: 700;
+  gap: 0.1rem;
+  min-width: 72px;
+}
+
+.bottom-nav a span {
+  color: var(--primary);
+  font-size: 1.15rem;
+}
+
+.status-pill {
+  background: var(--blush);
+  border-radius: var(--radius-pill);
+  color: var(--primary);
+  display: inline-flex;
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 0.3rem 0.65rem;
+  text-transform: capitalize;
+}
+
+.status-confirmed {
+  background: var(--sage);
+  color: #235b3c;
+}
+
+.status-cancelled {
+  background: #f0e9ec;
+  color: #66545c;
+}
+
+[data-font="classic"] {
+  --font-body: Georgia, "Times New Roman", serif;
+}
+
+[data-font="handwritten"] {
+  --font-body: "Comic Sans MS", "Bradley Hand", cursive;
+}
+
+[data-font="simple"] {
+  --font-body: Arial, Helvetica, sans-serif;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * { animation: none !important; transition: none !important; }
+}
