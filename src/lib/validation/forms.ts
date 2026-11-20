@@ -1,4 +1,6 @@
 import { z } from "zod";
+import { EXPLORE_CATEGORIES } from "@/lib/explore-categories";
+import { t } from "@/lib/text";
 import { optionalMapsUrlSchema } from "./maps-url";
 
 const requiredText = (max: number, label: string) =>
@@ -38,6 +40,16 @@ export const dateSchema = z.object({
 export const albumSchema = z.object({
   title: requiredText(80, "Album name"),
   albumDate: z.iso.date("Choose a valid album date."),
+});
+
+export const importantDateSchema = z.object({
+  what: z.string().trim().min(1, t.importantDates.required).max(80, t.importantDates.tooLong),
+  date: z.iso.date(t.importantDates.invalidDate),
+});
+
+export const explorePostSchema = z.object({
+  category: z.enum(EXPLORE_CATEGORIES),
+  content: z.string().trim().min(1, t.explore.reminderRequired).max(500, t.explore.postTooLong),
 });
 
 export const appearanceSchema = z.object({

@@ -18,7 +18,10 @@ UI screens: `docs/ui/Our_Date_Planner.pdf`. Status: **Phase 0 (setup) and Phase 
 ## Database
 
 Paste each file from `supabase/migrations/` into the Supabase SQL Editor, in order:
-`001` to `006`, then `007` to check. Details are in the comments at the top of each file.
+`001` to `017`. Migration `007` runs integrity checks; `016` adds the public Explore feed
+and its starter posts, and `017` adds couple-shared important dates. Apply migrations
+before `npm run build`; the Explore feed is cached and prerendered from the database
+during the build. Details are in the comments at the top of each file.
 
 ## Rules to keep
 

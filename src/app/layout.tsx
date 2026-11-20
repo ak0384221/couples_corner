@@ -15,6 +15,22 @@ const quicksand = Quicksand({
 export const metadata: Metadata = {
   title: t.app.name,
   description: t.app.tagline,
+  applicationName: t.app.name,
+  icons: {
+    icon: "/icon.png",
+    apple: "/icon.png",
+  },
+  openGraph: {
+    title: t.app.name,
+    description: t.app.tagline,
+    siteName: t.app.name,
+    type: "website",
+  },
+  twitter: {
+    card: "summary",
+    title: t.app.name,
+    description: t.app.tagline,
+  },
   robots: { index: false, follow: false }, // private site
 };
 

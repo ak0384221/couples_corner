@@ -1,6 +1,6 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, updateTag } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient as createAuthClient } from "@supabase/supabase-js";
 import { z } from "zod";
@@ -8,9 +8,10 @@ import { requireUser } from "@/lib/supabase/auth";
 import { createClient } from "@/lib/supabase/server";
 import { EMAIL_DELIVERY_PAUSED, sendAppEmail } from "@/lib/notifications/email";
 import type { ActionState } from "@/lib/action-state";
-import { albumSchema, appearanceSchema, dateSchema, profileSchema } from "@/lib/validation/forms";
+import { albumSchema, appearanceSchema, dateSchema, explorePostSchema, importantDateSchema, profileSchema } from "@/lib/validation/forms";
 import { MAX_MEMORY_PHOTOS, MAX_PHOTO_BYTES } from "@/lib/photo-limits";
 import { DATE_OPTION_CATEGORIES } from "@/lib/date-options";
+import { t } from "@/lib/text";
 
 function value(formData: FormData, key: string): string {
   const field = formData.get(key);
@@ -436,6 +437,49 @@ export async function createAlbum(_previous: ActionState, formData: FormData): P
   revalidatePath("/profile");
   revalidatePath("/us");
   redirect(`/memories/${data.id}`);
+}
+
+export async function createExplorePost(_previous: ActionState, formData: FormData): Promise<ActionState> {
+  const user = await requireUser();
+  const parsed = explorePostSchema.safeParse({
+    category: value(formData, "category"),
+    content: value(formData, "content"),
+  });
+  if (!parsed.success) return fail(parsed.error.issues[0]?.message ?? t.explore.checkPost);
+
+  const supabase = await createClient();
+  const { error } = await supabase.from("explore_posts").insert({
+    category: parsed.data.category,
+    content: parsed.data.content,
+    author_id: user.id,
+  });
+  if (error) return fail(databaseMessage(error.message));
+
+  updateTag("explore-posts");
+  revalidatePath("/explore");
+  return { error: null, success: t.explore.postSaved };
+}
+
+export async function createImportantDate(_previous: ActionState, formData: FormData): Promise<ActionState> {
+  await requireUser();
+  const parsed = importantDateSchema.safeParse({
+    what: value(formData, "what"),
+    date: value(formData, "date"),
+  });
+  if (!parsed.success) {
+    return fail(parsed.error.issues[0]?.message ?? t.importantDates.required);
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase.from("important_dates").insert({
+    event_name: parsed.data.what,
+    event_date: parsed.data.date,
+  });
+  if (error) return fail(databaseMessage(error.message));
+
+  revalidatePath("/important-dates");
+  revalidatePath("/");
+  return { error: null, success: t.importantDates.saved };
 }
 
 export async function updateAlbum(

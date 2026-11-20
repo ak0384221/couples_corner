@@ -12,11 +12,33 @@ export async function getDatesHomeData() {
 
   const userId = authData.user.id;
   const [profileResult, membershipResult] = await Promise.all([
-    supabase.from("profiles").select("id, name").eq("id", userId).maybeSingle(),
+    supabase.from("profiles").select("id, name, birth_day, birth_month").eq("id", userId).maybeSingle(),
     supabase.from("couple_members").select("couple_id").eq("user_id", userId).maybeSingle(),
   ]);
   if (profileResult.error) throw new Error(`Could not load your profile: ${profileResult.error.message}`);
   if (membershipResult.error) throw new Error(`Could not load your pairing: ${membershipResult.error.message}`);
+
+  let partner: { id: string; name: string; birth_day: number | null; birth_month: number | null } | null = null;
+  let togetherSince: string | null = null;
+  if (membershipResult.data) {
+    const [coupleResult, membersResult] = await Promise.all([
+      supabase.from("couples").select("together_since").eq("id", membershipResult.data.couple_id).maybeSingle(),
+      supabase.from("couple_members").select("user_id").eq("couple_id", membershipResult.data.couple_id),
+    ]);
+    if (coupleResult.error) throw new Error(`Could not load anniversary date: ${coupleResult.error.message}`);
+    if (membersResult.error) throw new Error(`Could not load couple members: ${membersResult.error.message}`);
+    togetherSince = coupleResult.data?.together_since ?? null;
+    const partnerId = membersResult.data?.find((member) => member.user_id !== userId)?.user_id;
+    if (partnerId) {
+      const partnerResult = await supabase
+        .from("profiles")
+        .select("id, name, birth_day, birth_month")
+        .eq("id", partnerId)
+        .maybeSingle();
+      if (partnerResult.error) throw new Error(`Could not load your partner's birthday: ${partnerResult.error.message}`);
+      partner = partnerResult.data;
+    }
+  }
 
   const { data: dates, error: datesError } = await supabase
     .from("dates")
@@ -34,6 +56,8 @@ export async function getDatesHomeData() {
   return {
     profile: profileResult.data,
     membership: membershipResult.data,
+    partner,
+    togetherSince,
     dates: dates ?? [],
     places: placesResult.data ?? [],
   };

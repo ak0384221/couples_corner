@@ -28,9 +28,9 @@ function notificationHref(type: string, id: string | null): string {
 function NotificationsLoading() {
   return (
     <AppFrame title="Notifications" backHref="/">
-      <div className="space-y-3" aria-label="Loading notifications">
+      <div className="skeleton-fade space-y-3" aria-label="Loading notifications">
         {Array.from({ length: 3 }, (_, index) => (
-          <div className="h-24 animate-pulse rounded-card border border-line bg-card" key={index} />
+          <div className="ui-skeleton h-24 rounded-card" key={index} />
         ))}
       </div>
     </AppFrame>

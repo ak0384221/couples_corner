@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/client";
 import { Heart } from "@/components/heart";
 import { ErrorMessage } from "@/components/ui";
 import { PasswordInput } from "@/components/password-input";
+import { t } from "@/lib/text";
 
 export function LoginForm() {
   const router = useRouter();
@@ -83,8 +84,10 @@ export function LoginForm() {
   return (
     <main className="flex min-h-dvh flex-col justify-center gap-5 px-7 py-12">
       <div className="flex flex-col items-center text-center">
-        <Heart />
-        <h1 className="mt-3 text-3xl font-bold">Our little corner</h1>
+        <div className="login-heart-rings">
+          <Heart size={48} />
+        </div>
+        <h1 className="mt-3 text-3xl font-bold">{t.login.title}</h1>
         <p className="mt-2 text-ink-soft">Just two keys exist. Yours and mine.</p>
       </div>
       {factorId ? (

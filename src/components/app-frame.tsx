@@ -4,10 +4,14 @@ import { connection } from "next/server";
 import { AppBackButton } from "@/components/app-back-button";
 import { BottomNavigation } from "@/components/bottom-navigation";
 import { Heart } from "@/components/heart";
+import { getCurrentUser } from "@/lib/supabase/auth";
 import { createClient } from "@/lib/supabase/server";
 
 async function NotificationLink() {
   await connection();
+  const user = await getCurrentUser();
+  if (!user) return null;
+
   const supabase = await createClient();
   const { count: unreadCount, error } = await supabase
     .from("notifications")
@@ -31,22 +35,23 @@ export async function AppFrame({
   title,
   backHref,
   children,
+  className = "",
 }: {
   title: string;
   backHref?: string;
   children: React.ReactNode;
+  className?: string;
 }) {
   return (
-    <div className="min-h-dvh px-5 pb-28 pt-7">
-      <header className="mb-6 flex items-center gap-3">
+    <div className={`min-h-dvh px-5 pb-28 pt-7 ${className}`}>
+      <header className="love-header mb-6 flex items-start gap-3">
         {backHref ? (
           <AppBackButton fallback={backHref} />
         ) : null}
         <div className="min-w-0 flex-1">
-          <p className="text-xs font-bold uppercase tracking-[0.18em] text-primary">Our little corner</p>
-          <h1 className="truncate text-2xl font-bold">{title}</h1>
+          <h1 className="truncate love-page-title text-3xl font-semibold">{title}</h1>
         </div>
-        <Suspense fallback={<Link className="icon-button notification-button" href="/notifications" aria-label="Notifications"><Heart size={25} /></Link>}>
+        <Suspense fallback={null}>
           <NotificationLink />
         </Suspense>
       </header>

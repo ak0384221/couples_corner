@@ -38,10 +38,10 @@ export default async function UsPage({ searchParams }: { searchParams: Promise<{
   const { membership, myProfile } = data;
   if (!membership) {
     return (
-      <AppFrame title="Profile">
+      <AppFrame title="Profile" className="profile-page-frame">
         <div className="space-y-4">
           {profileUpdated ? <Card className="border-primary/40 bg-blush text-center font-bold text-primary"><p role="status">Your profile was updated successfully.</p></Card> : null}
-          <Card className="text-center">
+          <Card className="love-profile-card text-center">
             {data.avatarUrl ? (
               <Image
                 src={data.avatarUrl}
@@ -100,7 +100,7 @@ export default async function UsPage({ searchParams }: { searchParams: Promise<{
     <AppFrame title="Profile">
       <div className="space-y-4">
         {profileUpdated ? <Card className="border-primary/40 bg-blush text-center font-bold text-primary"><p role="status">Your profile was updated successfully.</p></Card> : null}
-        <Card className="text-center">
+        <Card className="love-profile-card text-center">
           <div className="relative flex items-center justify-center -space-x-3">
             {[me, partner].filter((person) => person !== null).map((person) => (
               person ? avatarUrls.get(person.id)
@@ -116,7 +116,7 @@ export default async function UsPage({ searchParams }: { searchParams: Promise<{
           {partner ? <p className="mt-1 text-sm text-ink-soft">@{partner.username} · {partner.bio ?? "Your favorite person."}</p> : null}
           <p className="mt-4 text-sm text-ink-soft">Together since {since.toLocaleDateString("en", { month: "long", day: "numeric", year: "numeric", timeZone: "UTC" })}</p>
         </Card>
-        <div className="grid grid-cols-3 gap-2 text-center">
+        <div className="profile-stats grid grid-cols-3 gap-2 text-center">
           <Stat value={daysTogether.toLocaleString()} label="days together" detail={durationLabel} />
           <Stat value={String(dateCount ?? 0)} label="dates planned" />
           <Stat value={String(memoriesCount ?? 0)} label="memories saved" />

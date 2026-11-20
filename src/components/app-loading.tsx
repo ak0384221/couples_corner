@@ -1,13 +1,17 @@
 export function AppLoading() {
   return (
-    <main className="app-loading min-h-dvh px-5 pb-28 pt-7" aria-label="Loading your little corner">
-      <div className="mb-6">
-        <p className="text-xs font-bold uppercase tracking-[0.18em] text-primary">Our little corner</p>
-        <div className="mt-3 h-8 w-40 animate-pulse rounded-full bg-blush" />
+    <main className="app-loading skeleton-fade min-h-dvh px-5 pb-28 pt-7" aria-label="Loading Couply">
+      <div className="love-header mb-6 flex items-start justify-between gap-3">
+        <div className="ui-skeleton h-9 w-40 rounded-full" />
+        <div className="ui-skeleton h-[42px] w-[42px] rounded-full" />
       </div>
       <div className="space-y-4" aria-hidden="true">
-        <div className="h-40 animate-pulse rounded-card border border-line bg-card" />
-        <div className="h-24 animate-pulse rounded-card border border-line bg-card" />
+        <div className="ui-skeleton h-40 rounded-card" />
+        <div className="ui-skeleton h-24 rounded-card" />
+        <div className="grid grid-cols-2 gap-3">
+          <div className="ui-skeleton h-24 rounded-card" />
+          <div className="ui-skeleton h-24 rounded-card" />
+        </div>
       </div>
     </main>
   );
