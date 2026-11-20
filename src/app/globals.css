@@ -843,9 +843,6 @@ section.rounded-card.love-profile-card {
 
 .love-profile-card > div:first-child {
   align-items: center;
-  aspect-ratio: 1;
-  background:
-    radial-gradient(circle, rgb(255 255 255 / 28%) 0 38%, transparent 39% 47%, rgb(215 234 240 / 76%) 48% 57%, transparent 58% 64%, rgb(255 255 255 / 68%) 65% 73%, transparent 74%);
   border-radius: 999px;
   display: flex;
   height: 180px;
@@ -855,7 +852,22 @@ section.rounded-card.love-profile-card {
   margin-bottom: 20px;
   position: relative;
   width: 180px;
+}
+
+.love-profile-card > div:first-child::before {
+  aspect-ratio: 1;
+  background:
+    radial-gradient(circle, rgb(255 255 255 / 28%) 0 38%, transparent 39% 47%, rgb(215 234 240 / 76%) 48% 57%, transparent 58% 64%, rgb(255 255 255 / 68%) 65% 73%, transparent 74%);
+  border-radius: 50%;
   box-shadow: 0 0 0 10px rgb(233 239 242 / 48%), 0 0 24px 18px rgb(255 255 255 / 26%);
+  content: "";
+  height: 300px;
+  left: 50%;
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 300px;
+  z-index: 0;
 }
 
 .profile-page-frame {
@@ -870,7 +882,19 @@ section.rounded-card.love-profile-card {
 .love-profile-card > div:first-child > div,
 .love-profile-card > div:first-child > img {
   height: 76px;
+  position: relative;
   width: 76px;
+  z-index: 1;
+}
+
+.love-profile-card > h2,
+.love-profile-card > p {
+  position: relative;
+  z-index: 1;
+}
+
+.love-profile-card > h2 {
+  text-shadow: 0 1px 5px rgb(255 255 255 / 62%);
 }
 
 .love-header {
