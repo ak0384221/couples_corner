@@ -431,6 +431,12 @@ body:has(.app-column[data-theme="light"]) {
 .memory-person {
   height: 76px;
   width: 76px;
+  transform-origin: center;
+  animation: memory-person-bubble 2.4s ease-in-out infinite;
+}
+
+.memory-person-2 {
+  animation-delay: 180ms;
 }
 
 .memory-lock-copy {
@@ -1449,6 +1455,11 @@ section.rounded-card {
   to {
     transform: translateX(290%);
   }
+}
+
+@keyframes memory-person-bubble {
+  0%, 100% { transform: scale(0.92); }
+  50% { transform: scale(1.1); }
 }
 
 .status-pill {
