@@ -1,13 +1,5 @@
 @import "tailwindcss";
 
-/* ------------------------------------------------------------------
-   Design tokens taken from the 27 UI screens.
-   Per-person themes (Phase 7) work by changing data attributes on <html>:
-     data-theme="pink|light|dark"   data-accent="rose|lilac|sky|sage|butter"
-     data-font="soft|classic|handwritten|simple"   data-font-color="cocoa|black|plum|navy"
-   Phase 7 adds the contrast check that blocks unreadable combinations.
-   ------------------------------------------------------------------ */
-
 :root {
   --love-alarm-background: linear-gradient(155deg, #32c6da 0%, #9de1ea 34%, #f4cadc 67%, #fff1f5 100%);
   /* surfaces */
@@ -40,42 +32,6 @@
   --font-body: var(--font-quicksand), ui-rounded, system-ui, sans-serif;
 }
 
-.app-column[data-theme="light"] {
-  --page: #ffffff;
-  --card: #ffffff;
-  --blush: #fbeef2;
-  --line: #f1d9e0;
-}
-
-.app-column[data-theme="dark"] {
-  --page: #1f1a1d;
-  --card: #2b2428;
-  --blush: #3a2d33;
-  --line: #4a3a41;
-  --ink: #f7e9ee;
-  --ink-soft: #cbb0ba;
-}
-
-/* accent colors: deep enough for white button text (checked again in Phase 7) */
-.app-column[data-accent="rose"] { --primary: #c2325e; --heart: #e8557a; }
-.app-column[data-accent="lilac"] { --primary: #6d4fc2; --heart: #9a7be8; }
-.app-column[data-accent="sky"] { --primary: #1f6fb8; --heart: #5aa5ec; }
-.app-column[data-accent="sage"] { --primary: #2f7d55; --heart: #5fb68a; }
-.app-column[data-accent="butter"] { --primary: #946200; --heart: #e0b030; }
-
-/* font color */
-.app-column[data-font-color="cocoa"] { --ink: #3d2a33; }
-.app-column[data-font-color="black"] { --ink: #111111; }
-.app-column[data-font-color="plum"] { --ink: #5a2a4f; }
-.app-column[data-font-color="navy"] { --ink: #1e2a47; }
-.app-column[data-theme="dark"][data-font-color="cocoa"] { --ink: #f7e9ee; }
-.app-column[data-theme="dark"][data-font-color="black"] { --ink: #ffffff; }
-.app-column[data-theme="dark"][data-font-color="plum"] { --ink: #f0d7f0; }
-.app-column[data-theme="dark"][data-font-color="navy"] { --ink: #d7e5ff; }
-
-/* font style: Soft is Quicksand. The other three are added with the Appearance screen. */
-.app-column[data-font="soft"] { --font-body: var(--font-quicksand), ui-rounded, system-ui, sans-serif; }
-
 @theme inline {
   --color-page: var(--page);
   --color-card: var(--card);
@@ -106,14 +62,6 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-body:has(.app-column[data-theme="dark"]) {
-  background: linear-gradient(155deg, #1d6c78 0%, #2b4e57 35%, #35272e 72%, #1f1a1d 100%);
-}
-
-body:has(.app-column[data-theme="light"]) {
-  background: linear-gradient(155deg, #42bfd1 0%, #c4edf1 38%, #f7dfe8 72%, #fff6f8 100%);
-}
-
 /* Phone-width column, centered on bigger screens */
 .app-column {
   margin-inline: auto;
@@ -122,14 +70,6 @@ body:has(.app-column[data-theme="light"]) {
   min-height: 100dvh;
   position: relative;
   background: var(--love-alarm-background);
-}
-
-.app-column[data-theme="dark"] {
-  background: linear-gradient(155deg, #1d6c78 0%, #2b4e57 35%, #35272e 72%, #1f1a1d 100%);
-}
-
-.app-column[data-theme="light"] {
-  background: linear-gradient(155deg, #42bfd1 0%, #c4edf1 38%, #f7dfe8 72%, #fff6f8 100%);
 }
 
 :focus-visible {
@@ -236,11 +176,7 @@ body:has(.app-column[data-theme="light"]) {
   width: 100%;
 }
 
-.app-column[data-theme="dark"] select.field-input {
-  color-scheme: dark;
-}
-
-.app-column:not([data-theme="dark"]) select.field-input {
+select.field-input {
   color-scheme: light;
 }
 
@@ -345,10 +281,13 @@ body:has(.app-column[data-theme="light"]) {
 .memory-page {
   display: flex;
   flex-direction: column;
-  min-height: 100dvh;
+  min-height: 100vh;
+  min-height: 100svh;
 }
 
 .memory-app-frame {
+  min-height: 100vh;
+  min-height: 100svh;
   padding: 0 0 calc(96px + env(safe-area-inset-bottom));
 }
 
@@ -362,7 +301,9 @@ body:has(.app-column[data-theme="light"]) {
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  min-height: calc(100dvh - 96px - env(safe-area-inset-bottom));
+  /* Keep the hero steady as mobile browser chrome expands or collapses on scroll. */
+  min-height: calc(100vh - 96px - env(safe-area-inset-bottom));
+  min-height: calc(100svh - 96px - env(safe-area-inset-bottom));
   padding: 2rem 1.5rem 1.2rem;
   text-align: center;
 }
@@ -913,10 +854,6 @@ section.rounded-card.love-profile-card {
   line-height: 1.08;
 }
 
-.app-column[data-theme="dark"] .love-page-title {
-  color: #effcff;
-}
-
 .rounded-card {
   border-radius: var(--radius-card);
 }
@@ -937,10 +874,6 @@ section.rounded-card {
 .profile-stats section.rounded-card > p:first-child {
   color: var(--primary);
   font-size: 1.4rem;
-}
-
-.app-column[data-theme="dark"] .profile-stats section.rounded-card {
-  background: rgb(43 36 40 / 35%);
 }
 
 .love-hero {
@@ -1481,18 +1414,6 @@ section.rounded-card {
 .status-cancelled {
   background: #f0e9ec;
   color: #66545c;
-}
-
-.app-column[data-font="classic"] {
-  --font-body: Georgia, "Times New Roman", serif;
-}
-
-.app-column[data-font="handwritten"] {
-  --font-body: "Comic Sans MS", "Bradley Hand", cursive;
-}
-
-.app-column[data-font="simple"] {
-  --font-body: Arial, Helvetica, sans-serif;
 }
 
 @media (prefers-reduced-motion: reduce) {

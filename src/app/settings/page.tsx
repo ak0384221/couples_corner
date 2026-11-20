@@ -11,7 +11,7 @@ export default async function SettingsPage() {
   const user = await requireUser();
   const supabase = await createClient();
   const [profileResult, membersResult] = await Promise.all([
-    supabase.from("profiles").select("name, username, email_alerts, theme_mode, theme_font").eq("id", user.id).maybeSingle(),
+    supabase.from("profiles").select("name, username, email_alerts").eq("id", user.id).maybeSingle(),
     supabase.from("couple_members").select("couple_id").eq("user_id", user.id).maybeSingle(),
   ]);
   const { data: profile, error } = profileResult;
@@ -27,7 +27,6 @@ export default async function SettingsPage() {
     <AppFrame title="Settings">
       <div className="space-y-4">
         {profile ? <Card className="flex items-center justify-between gap-3"><div><p className="font-bold">{profile.name}</p><p className="text-sm text-ink-soft">@{profile.username}</p></div><Link className="text-sm font-bold text-primary" href="/profile/edit">Edit</Link></Card> : null}
-        <Link href="/settings/appearance" className="block"><Card><p className="font-bold">Appearance</p><p className="mt-1 text-sm text-ink-soft">{profile?.theme_mode ?? "Pink"} · {profile?.theme_font ?? "Soft"} ›</p></Card></Link>
         {profile ? (
           <Card>
             <div className="flex items-center justify-between gap-3">

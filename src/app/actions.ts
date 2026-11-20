@@ -8,7 +8,7 @@ import { requireUser } from "@/lib/supabase/auth";
 import { createClient } from "@/lib/supabase/server";
 import { EMAIL_DELIVERY_PAUSED, sendAppEmail } from "@/lib/notifications/email";
 import type { ActionState } from "@/lib/action-state";
-import { albumSchema, appearanceSchema, dateSchema, explorePostSchema, importantDateSchema, profileSchema } from "@/lib/validation/forms";
+import { albumSchema, dateSchema, explorePostSchema, importantDateSchema, profileSchema } from "@/lib/validation/forms";
 import { MAX_MEMORY_PHOTOS, MAX_PHOTO_BYTES } from "@/lib/photo-limits";
 import { DATE_OPTION_CATEGORIES } from "@/lib/date-options";
 import { t } from "@/lib/text";
@@ -737,22 +737,6 @@ export async function updateProfileSettings(_previous: ActionState, formData: Fo
   revalidatePath("/profile");
   revalidatePath("/profile/edit");
   redirect("/profile?updated=1");
-}
-
-export async function saveAppearance(_previous: ActionState, formData: FormData): Promise<ActionState> {
-  const parsed = appearanceSchema.safeParse({
-    theme_mode: value(formData, "theme_mode"),
-    theme_font: value(formData, "theme_font"),
-    theme_accent: value(formData, "theme_accent"),
-    theme_font_color: value(formData, "theme_font_color"),
-  });
-  if (!parsed.success) return fail("Choose a valid appearance option.");
-  const user = await requireUser();
-  const supabase = await createClient();
-  const { error } = await supabase.from("profiles").update(parsed.data).eq("id", user.id);
-  if (error) return fail(databaseMessage(error.message));
-  revalidatePath("/", "layout");
-  return { error: null, success: "Appearance saved." };
 }
 
 export async function setEmailAlerts(formData: FormData) {

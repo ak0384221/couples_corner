@@ -80,11 +80,9 @@ Steps, each a cute card screen:
 
 Both profile pictures joined by a heart, names, "Together since" date, days together counter, dates planned, photos saved, and Edit my profile.
 
-### 3.8 Settings and appearance
+### 3.8 Settings
 
-- **Settings:** profile card with Edit, Appearance, email switch, change password, two-factor login, sign out of all devices, who you are paired with, and Sign out.
-- **Appearance (per person):** mode (Light, Dark or Pink), font style (Soft, Classic, Handwritten, Simple), accent color, and font color.
-- Block or warn about combinations that make text hard to read.
+- **Settings:** profile card with Edit, email switch, change password, two-factor login, sign out of all devices, who you are paired with, and Sign out.
 
 ## 4. Screen map (21 current screens)
 
@@ -107,8 +105,7 @@ Both profile pictures joined by a heart, names, "Together since" date, days toge
 17. Email alert
 18. Us
 19. Settings
-20. Appearance
-21. Edit profile
+20. Edit profile
 
 The original design PDF includes screens for the removed closet feature. It is not part of the current application.
 
@@ -213,7 +210,7 @@ Log in with a third test account and confirm it cannot read the couple's dates, 
 3. Date planner flow (with manual places and the Craving step), date request and confirmation.
 4. Photo upload with 400 KB shrinking, albums and the gallery.
 5. Notifications and email (Resend).
-6. Settings and appearance.
+6. Settings.
 7. Security test with a third account, backups, then hosting and launch.
 
 ## 8. Change log

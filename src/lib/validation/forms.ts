@@ -51,10 +51,3 @@ export const explorePostSchema = z.object({
   category: z.enum(EXPLORE_CATEGORIES),
   content: z.string().trim().min(1, t.explore.reminderRequired).max(500, t.explore.postTooLong),
 });
-
-export const appearanceSchema = z.object({
-  theme_mode: z.enum(["pink", "light", "dark"]),
-  theme_font: z.enum(["soft", "classic", "handwritten", "simple"]),
-  theme_accent: z.enum(["rose", "lilac", "sky", "sage", "butter"]),
-  theme_font_color: z.enum(["cocoa", "black", "plum", "navy"]),
-});
