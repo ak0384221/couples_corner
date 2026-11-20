@@ -54,6 +54,7 @@ export function DateForm({ places, options }: { places: Place[]; options: DateOp
         <div className="mt-4 space-y-3">
           <Field label="The day" name="day" type="date" required />
           <Field label="The time" name="start_time" type="time" required />
+          <p className="text-xs text-ink-soft">All date times use Dhaka time (Asia/Dhaka, UTC+6).</p>
         </div>
         <DateChoiceGroup label="Time of day" name="time_label" category="time_label" options={choices("time_label")} />
         <Field label="Give your date a name (optional)" name="name" placeholder="A little night out" maxLength={80} />

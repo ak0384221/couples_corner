@@ -15,7 +15,7 @@ function calendarDate(day: string, time: string, addMinutes = 0): string {
   const date = Number(day.slice(8, 10));
   const hours = Number(time.slice(0, 2));
   const minutes = Number(time.slice(3, 5));
-  const totalMinutes = hours * 60 + minutes + addMinutes;
+  const totalMinutes = hours * 60 + minutes + addMinutes - 6 * 60;
   const nextDate = new Date(Date.UTC(year, month - 1, date, 0, totalMinutes));
   return [
     nextDate.getUTCFullYear().toString().padStart(4, "0"),
@@ -25,6 +25,7 @@ function calendarDate(day: string, time: string, addMinutes = 0): string {
     nextDate.getUTCHours().toString().padStart(2, "0"),
     nextDate.getUTCMinutes().toString().padStart(2, "0"),
     "00",
+    "Z",
   ].join("");
 }
 
@@ -62,6 +63,7 @@ export async function GET(
     "VERSION:2.0",
     "PRODID:-//Our Little Corner//Date Planner//EN",
     "CALSCALE:GREGORIAN",
+    "X-WR-TIMEZONE:Asia/Dhaka",
     "BEGIN:VEVENT",
     `UID:${uid}`,
     `DTSTAMP:${now}`,

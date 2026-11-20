@@ -3,8 +3,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { AppFrame } from "@/components/app-frame";
 import { Card } from "@/components/ui";
-import { requireUser } from "@/lib/supabase/auth";
-import { createClient } from "@/lib/supabase/server";
+import { getDatesHomeData } from "@/lib/navigation-data";
 
 function HomeLoading() {
   return (
@@ -27,32 +26,12 @@ export default function HomePage() {
 }
 
 async function HomeContent() {
-  const user = await requireUser();
-  const supabase = await createClient();
-  const [profileResult, membershipResult] = await Promise.all([
-    supabase.from("profiles").select("id, name").eq("id", user.id).maybeSingle(),
-    supabase.from("couple_members").select("couple_id").eq("user_id", user.id).maybeSingle(),
-  ]);
-  const { data: profile, error: profileError } = profileResult;
-  if (profileError) throw new Error(`Could not load your profile: ${profileError.message}`);
+  const data = await getDatesHomeData();
+  if (!data) redirect("/login");
+  const { profile, membership, dates, places: placeRows } = data;
   if (!profile) redirect("/profile/setup");
-
-  const { data: membership, error: membershipError } = membershipResult;
-  if (membershipError) throw new Error(`Could not load your pairing: ${membershipError.message}`);
-
-  const { data: dates, error: datesError } = await supabase
-    .from("dates")
-    .select("id, name, day, start_time, time_label, status, place_id, food, mood, activity")
-    .order("day", { ascending: true })
-    .limit(30);
-  if (datesError) throw new Error(`Could not load your dates: ${datesError.message}`);
-  const placeIds = [...new Set((dates ?? []).map((date) => date.place_id))];
-  const placesResult = placeIds.length
-    ? await supabase.from("places").select("id, name, address").in("id", placeIds)
-    : { data: [], error: null };
-  if (placesResult.error) throw new Error(`Could not load date places: ${placesResult.error.message}`);
-  const places = new Map((placesResult.data ?? []).map((place) => [place.id, place]));
-  const upcoming = (dates ?? []).filter((date) => date.status !== "cancelled");
+  const places = new Map(placeRows.map((place) => [place.id, place]));
+  const upcoming = dates.filter((date) => date.status !== "cancelled");
 
   return (
     <AppFrame title={`Hi, ${profile.name}`}>
@@ -88,7 +67,7 @@ async function HomeContent() {
                     <p className="font-bold">{date.name || `${date.mood ?? "Our"} ${date.activity ?? "date"}`}</p>
                     <p className="mt-1 text-sm text-ink-soft">
                       {new Date(`${date.day}T12:00:00`).toLocaleDateString("en", { weekday: "short", day: "numeric", month: "short" })}
-                      {" · "}{date.time_label || date.start_time.slice(0, 5)}
+                      {" · "}{date.time_label || date.start_time.slice(0, 5)} · Dhaka time
                     </p>
                     <p className="mt-2 text-sm">{place?.name ?? "Place"}{place?.address ? ` · ${place.address}` : ""}</p>
                   </div>

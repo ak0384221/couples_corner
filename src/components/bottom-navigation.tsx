@@ -35,6 +35,7 @@ function NavigationItem({
   return (
     <Link
       href={href}
+      prefetch={true}
       className={active ? "active" : undefined}
       aria-current={active ? "page" : undefined}
     >

@@ -81,8 +81,9 @@ export async function sendAppEmail(
           weekday: "long",
           day: "numeric",
           month: "long",
+          timeZone: "UTC",
         });
-        dateSummary = `<p>${escapeHtml(day)} · ${escapeHtml(date.start_time.slice(0, 5))}${date.time_label ? `, ${escapeHtml(date.time_label)}` : ""}${place?.name ? ` · ${escapeHtml(place.name)}` : ""}</p>`;
+        dateSummary = `<p>${escapeHtml(day)} · ${escapeHtml(date.start_time.slice(0, 5))} Dhaka time${date.time_label ? `, ${escapeHtml(date.time_label)}` : ""}${place?.name ? ` · ${escapeHtml(place.name)}` : ""}</p>`;
       }
     }
 

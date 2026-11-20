@@ -3,39 +3,48 @@ import Link from "next/link";
 import { AppFrame } from "@/components/app-frame";
 import { Heart } from "@/components/heart";
 import { Card } from "@/components/ui";
+import { DHAKA_TIME_ZONE } from "@/lib/dhaka-time";
+import { getProfilePageData } from "@/lib/navigation-data";
 import { requireUser } from "@/lib/supabase/auth";
-import { createClient } from "@/lib/supabase/server";
+
+function dateInDhaka(date: Date): string {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: DHAKA_TIME_ZONE,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(date);
+  const part = (type: Intl.DateTimeFormatPartTypes) => parts.find((item) => item.type === type)?.value;
+  return `${part("year")}-${part("month")}-${part("day")}`;
+}
+
+function addCalendarMonths(date: Date, months: number): Date {
+  const monthIndex = date.getUTCMonth() + months;
+  const year = date.getUTCFullYear() + Math.floor(monthIndex / 12);
+  const month = ((monthIndex % 12) + 12) % 12;
+  const day = Math.min(date.getUTCDate(), new Date(Date.UTC(year, month + 1, 0)).getUTCDate());
+  return new Date(Date.UTC(year, month, day));
+}
+
+function calendarDaysBetween(start: Date, end: Date): number {
+  return Math.round((end.getTime() - start.getTime()) / 86_400_000);
+}
 
 export default async function UsPage({ searchParams }: { searchParams: Promise<{ updated?: string }> }) {
   const params = await searchParams;
   const profileUpdated = params.updated === "1";
   const user = await requireUser();
-  const supabase = await createClient();
-  const [membershipResult, profileResult] = await Promise.all([
-    supabase.from("couple_members").select("couple_id").eq("user_id", user.id).maybeSingle(),
-    supabase.from("profiles").select("id, name, username, bio, photo_path").eq("id", user.id).maybeSingle(),
-  ]);
-  const { data: membership, error: membershipError } = membershipResult;
-  if (membershipError) throw new Error(`Could not load your pairing: ${membershipError.message}`);
-  const { data: myProfile, error: myProfileError } = profileResult;
-  if (myProfileError) throw new Error(`Could not load your profile: ${myProfileError.message}`);
+  const data = await getProfilePageData(user.id);
+  const { membership, myProfile } = data;
   if (!membership) {
-    let avatarUrl: string | null = null;
-    if (myProfile?.photo_path) {
-      const { data, error: avatarError } = await supabase.storage
-        .from("photos")
-        .createSignedUrl(myProfile.photo_path, 3600);
-      if (avatarError) throw new Error(`Could not create your private profile photo link: ${avatarError.message}`);
-      avatarUrl = data.signedUrl;
-    }
     return (
       <AppFrame title="Profile">
         <div className="space-y-4">
           {profileUpdated ? <Card className="border-primary/40 bg-blush text-center font-bold text-primary"><p role="status">Your profile was updated successfully.</p></Card> : null}
           <Card className="text-center">
-            {avatarUrl ? (
+            {data.avatarUrl ? (
               <Image
-                src={avatarUrl}
+                src={data.avatarUrl}
                 alt={`${myProfile?.name ?? "Your"} profile photo`}
                 width={96}
                 height={96}
@@ -61,43 +70,32 @@ export default async function UsPage({ searchParams }: { searchParams: Promise<{
       </AppFrame>
     );
   }
-  const [
-    { data: couple, error: coupleError },
-    { data: members, error: membersError },
-    { count: dateCount, error: dateError },
-    { count: photoCount, error: photoError },
-  ] = await Promise.all([
-    supabase.from("couples").select("together_since").eq("id", membership.couple_id).maybeSingle(),
-    supabase.from("couple_members").select("user_id").eq("couple_id", membership.couple_id),
-    supabase.from("dates").select("id", { count: "exact", head: true }),
-    supabase.from("photos").select("id", { count: "exact", head: true }),
-  ]);
-  if (coupleError) throw new Error(`Could not load couple details: ${coupleError.message}`);
-  if (membersError) throw new Error(`Could not load couple members: ${membersError.message}`);
-  if (dateError) throw new Error(`Could not count dates: ${dateError.message}`);
-  if (photoError) throw new Error(`Could not count photos: ${photoError.message}`);
-  const partnerId = members?.find((member) => member.user_id !== user.id)?.user_id;
+  const { couple, dateCount, memoriesCount, partner, avatarUrls: avatarEntries } = data;
   const me = myProfile;
-  const { data: partner, error: partnerError } = partnerId
-    ? await supabase.from("profiles").select("id, name, username, bio, photo_path").eq("id", partnerId).maybeSingle()
-    : { data: null, error: null };
-  if (partnerError) throw new Error(`Could not load your partner's profile: ${partnerError.message}`);
-  const since = couple?.together_since ? new Date(`${couple.together_since}T00:00:00`) : new Date();
-  const daysTogether = Math.max(0, Math.floor((new Date().getTime() - since.getTime()) / 86_400_000));
-  const people = [me, partner].filter((person) => person !== null);
-  const avatarPeople = people.filter((person) => person.photo_path);
-  const { data: signedAvatars, error: avatarError } = avatarPeople.length
-    ? await supabase.storage.from("photos").createSignedUrls(avatarPeople.map((person) => person.photo_path!), 3600)
-    : { data: [], error: null };
-  if (avatarError) throw new Error(`Could not create avatar links: ${avatarError.message}`);
-  const avatars = avatarPeople.map((person, index) => {
-    const signed = signedAvatars?.[index];
-    if (signed?.error || !signed?.signedUrl) {
-      throw new Error(`Could not create an avatar link: ${signed?.error ?? "No link returned."}`);
-    }
-    return [person.id, signed.signedUrl] as const;
-  });
-  const avatarUrls = new Map<string, string>(avatars);
+  const dhakaToday = dateInDhaka(new Date());
+  const sinceDate = couple?.together_since ?? dhakaToday;
+  const since = new Date(`${sinceDate}T00:00:00Z`);
+  const today = new Date(`${dhakaToday}T00:00:00Z`);
+  const daysTogether = Math.max(0, calendarDaysBetween(since, today));
+  let yearsTogether = since > today ? 0 : today.getUTCFullYear() - since.getUTCFullYear();
+  let anniversary = addCalendarMonths(since, yearsTogether * 12);
+  if (since <= today && anniversary > today) {
+    yearsTogether -= 1;
+    anniversary = addCalendarMonths(since, yearsTogether * 12);
+  }
+  let monthsTogether = since > today ? 0 : (today.getUTCFullYear() - anniversary.getUTCFullYear()) * 12 + today.getUTCMonth() - anniversary.getUTCMonth();
+  let monthiversary = addCalendarMonths(anniversary, monthsTogether);
+  if (since <= today && monthiversary > today) {
+    monthsTogether -= 1;
+    monthiversary = addCalendarMonths(anniversary, monthsTogether);
+  }
+  const remainingDaysTogether = since > today ? 0 : calendarDaysBetween(monthiversary, today);
+  const durationLabel = [
+    `${yearsTogether} ${yearsTogether === 1 ? "year" : "years"}`,
+    `${monthsTogether} ${monthsTogether === 1 ? "month" : "months"}`,
+    `${remainingDaysTogether} ${remainingDaysTogether === 1 ? "day" : "days"}`,
+  ].join(", ");
+  const avatarUrls = new Map<string, string>(avatarEntries);
   return (
     <AppFrame title="Profile">
       <div className="space-y-4">
@@ -116,12 +114,12 @@ export default async function UsPage({ searchParams }: { searchParams: Promise<{
           </div>
           <h2 className="mt-4 text-2xl font-bold">{me?.name} &amp; {partner?.name ?? "your person"}</h2>
           {partner ? <p className="mt-1 text-sm text-ink-soft">@{partner.username} · {partner.bio ?? "Your favorite person."}</p> : null}
-          <p className="mt-4 text-sm text-ink-soft">Together since {since.toLocaleDateString("en", { month: "long", day: "numeric", year: "numeric" })}</p>
+          <p className="mt-4 text-sm text-ink-soft">Together since {since.toLocaleDateString("en", { month: "long", day: "numeric", year: "numeric", timeZone: "UTC" })}</p>
         </Card>
         <div className="grid grid-cols-3 gap-2 text-center">
-          <Stat value={daysTogether.toLocaleString()} label="days together" />
+          <Stat value={daysTogether.toLocaleString()} label="days together" detail={durationLabel} />
           <Stat value={String(dateCount ?? 0)} label="dates planned" />
-          <Stat value={String(photoCount ?? 0)} label="photos saved" />
+          <Stat value={String(memoriesCount ?? 0)} label="memories saved" />
         </div>
         <Link href="/profile/edit" className="secondary-button w-full">Edit my profile</Link>
         <Link href="/settings" className="block text-center text-sm font-bold text-primary">Settings →</Link>
@@ -130,6 +128,6 @@ export default async function UsPage({ searchParams }: { searchParams: Promise<{
   );
 }
 
-function Stat({ value, label }: { value: string; label: string }) {
-  return <Card className="px-2 py-4"><p className="text-xl font-bold">{value}</p><p className="mt-1 text-xs text-ink-soft">{label}</p></Card>;
+function Stat({ value, label, detail }: { value: string; label: string; detail?: string }) {
+  return <Card className="px-2 py-4"><p className="text-xl font-bold">{value}</p><p className="mt-1 text-xs text-ink-soft">{label}</p>{detail ? <p className="mt-1 text-[10px] leading-tight text-ink-soft">{detail}</p> : null}</Card>;
 }

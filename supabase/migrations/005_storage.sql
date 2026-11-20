@@ -7,8 +7,7 @@
 -- Paths (random UUID file names only):
 --   <couple_id>/albums/<uuid>.jpg      readable and writable only by that couple
 --   <couple_id>/closet/<uuid>.jpg      readable and writable only by that couple
---   avatars/<user_id>/<uuid>.jpg       readable by any logged-in user (partners see each other
---                                      before they are paired), writable only by the owner
+--   avatars/<user_id>/<uuid>.jpg       writable only by the owner; migration 015 narrows reads
 -- Photos are shown with short-lived signed URLs created on the server. Creating a signed
 -- URL needs the SELECT policy below, so only people who may read a file can get a link.
 -- There is no UPDATE policy: files are never overwritten, a new random name is used.

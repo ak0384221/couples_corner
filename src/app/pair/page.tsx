@@ -1,4 +1,3 @@
-import Image from "next/image";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { respondPairRequest } from "@/app/actions";
@@ -65,31 +64,13 @@ export default async function PairPage({ searchParams }: { searchParams: SearchP
   }
   const incoming = (requests ?? []).filter((request) => request.direction === "incoming");
   const outgoing = (requests ?? []).filter((request) => request.direction === "outgoing");
-  const avatarPaths = [
-    ...incoming.map((request) => request.other_photo_path),
-    ...matches.map((match) => match.photo_path),
-  ].filter((path): path is string => Boolean(path));
-  const uniqueAvatarPaths = [...new Set(avatarPaths)];
-  const { data: signedAvatars, error: avatarsError } = uniqueAvatarPaths.length
-    ? await supabase.storage.from("photos").createSignedUrls(uniqueAvatarPaths, 3600)
-    : { data: [], error: null };
-  if (avatarsError) throw new Error(`Could not create private profile image links: ${avatarsError.message}`);
-  const avatarMap = new Map<string, string>();
-  (signedAvatars ?? []).forEach((signed, index) => {
-    const path = uniqueAvatarPaths[index];
-    if (!path || signed.error || !signed.signedUrl) {
-      throw new Error(`Could not create a private profile image link: ${signed.error ?? "No link returned."}`);
-    }
-    avatarMap.set(path, signed.signedUrl);
-  });
-
   return (
     <AppFrame title={`Hi, ${profile.name}`}>
       <div className="space-y-4">
         {incoming.map((request) => (
           <Card key={request.request_id}>
             <div className="flex items-center gap-3">
-              {request.other_photo_path && avatarMap.get(request.other_photo_path) ? <Image src={avatarMap.get(request.other_photo_path)!} alt="" width={64} height={64} unoptimized className="h-16 w-16 rounded-full object-cover" /> : <span className="flex h-16 w-16 items-center justify-center rounded-full bg-blush text-2xl">{request.other_name.charAt(0)}</span>}
+              <span className="flex h-16 w-16 items-center justify-center rounded-full bg-blush text-2xl">{request.other_name.charAt(0)}</span>
               <p className="text-xl font-bold">{request.other_name} wants to pair with you</p>
             </div>
             <p className="mt-2 text-sm text-ink-soft">@{request.other_username} · {request.other_bio ?? "Ready to share a little corner."}</p>
@@ -124,7 +105,7 @@ export default async function PairPage({ searchParams }: { searchParams: SearchP
           {matches.map((match) => (
             <div key={match.id} className="mt-4 rounded-card border border-line p-4">
               <div className="flex items-center gap-3">
-                {match.photo_path && avatarMap.get(match.photo_path) ? <Image src={avatarMap.get(match.photo_path)!} alt="" width={56} height={56} unoptimized className="h-14 w-14 rounded-full object-cover" /> : <span className="flex h-14 w-14 items-center justify-center rounded-full bg-blush text-xl">{match.name.charAt(0)}</span>}
+                <span className="flex h-14 w-14 items-center justify-center rounded-full bg-blush text-xl">{match.name.charAt(0)}</span>
                 <p className="font-bold">{match.name}</p>
               </div>
               <p className="text-sm text-primary">@{match.username}</p>

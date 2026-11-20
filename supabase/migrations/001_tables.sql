@@ -232,7 +232,7 @@ create trigger places_set_updated_at
 
 -- =====================================================================
 -- dates
--- day and start_time are plain local wall-clock values (no time zone conversion).
+-- day and start_time are Dhaka calendar/wall-clock values (Asia/Dhaka); no zone conversion is stored.
 -- creator_* = what the planner wears; partner_* = what the planner picks for the other person.
 -- =====================================================================
 create table public.dates (

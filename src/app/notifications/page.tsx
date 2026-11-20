@@ -3,6 +3,7 @@ import Link from "next/link";
 import { markAllNotificationsRead, markNotificationRead } from "@/app/actions";
 import { AppFrame } from "@/components/app-frame";
 import { Card } from "@/components/ui";
+import { formatDhakaTimestamp } from "@/lib/dhaka-time";
 import { requireUser } from "@/lib/supabase/auth";
 import { createClient } from "@/lib/supabase/server";
 
@@ -66,7 +67,7 @@ async function NotificationsContent() {
               <span className={`mt-1 h-2.5 w-2.5 shrink-0 rounded-full ${item.is_read ? "bg-line" : "bg-primary"}`} aria-label={item.is_read ? "Read" : "Unread"} />
               <div className="min-w-0 flex-1">
                 <p className="font-bold">{names.get(item.actor_id ?? "") ?? "Your partner"} {descriptions[item.event_type] ?? "sent you an update"}</p>
-                <p className="mt-1 text-xs text-ink-soft">{new Date(item.created_at).toLocaleString("en", { dateStyle: "medium", timeStyle: "short" })}</p>
+                <p className="mt-1 text-xs text-ink-soft">{formatDhakaTimestamp(item.created_at)} · Dhaka time</p>
                 <div className="mt-3 flex items-center justify-between gap-2">
                   <Link className="text-sm font-bold text-primary" href={notificationHref(item.event_type, item.ref_id)}>Open →</Link>
                   {!item.is_read ? <form action={markNotificationRead}><input type="hidden" name="notification_id" value={item.id} /><button className="text-xs font-bold text-ink-soft">Mark read</button></form> : null}

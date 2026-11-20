@@ -47,7 +47,7 @@ export default async function DateDetailPage({
         <Card>
           <dl className="divide-y divide-line">
             <InfoRow title="When" value={dateLabel} />
-            <InfoRow title="Time" value={`${date.start_time.slice(0, 5)} · ${date.time_label ?? "Any time"}`} />
+            <InfoRow title="Time (Dhaka)" value={`${date.start_time.slice(0, 5)} · ${date.time_label ?? "Any time"}`} />
             <InfoRow title="Place" value={place.name} />
             {place.address ? <InfoRow title="Address" value={place.address} /> : null}
             <InfoRow title="Craving" value={date.food ?? "A surprise"} />

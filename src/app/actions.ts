@@ -224,6 +224,8 @@ export async function createDate(_previous: ActionState, formData: FormData): Pr
   }
   const emailSent = await sendAppEmail(partnerId, "date_requested", date.id);
   revalidatePath("/");
+  revalidatePath("/profile");
+  revalidatePath("/us");
   revalidatePath("/notifications");
   redirect(`/dates/${date.id}${emailSent ? "" : "?email=not-sent"}`);
 }
@@ -431,6 +433,8 @@ export async function createAlbum(_previous: ActionState, formData: FormData): P
     .single();
   if (error || !data) return fail(databaseMessage(error?.message ?? "Album was not created."));
   revalidatePath("/memories");
+  revalidatePath("/profile");
+  revalidatePath("/us");
   redirect(`/memories/${data.id}`);
 }
 
@@ -489,6 +493,8 @@ export async function deleteAlbum(albumId: string): Promise<never> {
     : { error: null };
   revalidatePath("/memories");
   revalidatePath(`/memories/${parsedId.data}`);
+  revalidatePath("/profile");
+  revalidatePath("/us");
   redirect(cleanupError ? "/memories?cleanup=failed" : "/memories?deleted=album");
 }
 
