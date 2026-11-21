@@ -42,20 +42,22 @@ export default async function UsPage({ searchParams }: { searchParams: Promise<{
         <div className="space-y-4">
           {profileUpdated ? <Card className="border-primary/40 bg-blush text-center font-bold text-primary"><p role="status">Your profile was updated successfully.</p></Card> : null}
           <Card className="love-profile-card text-center">
-            {data.avatarUrl ? (
-              <Image
-                src={data.avatarUrl}
-                alt={`${myProfile?.name ?? "Your"} profile photo`}
-                width={96}
-                height={96}
-                unoptimized
-                className="mx-auto h-24 w-24 rounded-full object-cover"
-              />
-            ) : (
-              <div className="mx-auto flex h-24 w-24 items-center justify-center rounded-full bg-blush text-3xl text-primary">
-                {myProfile?.name.charAt(0).toUpperCase() ?? "♡"}
-              </div>
-            )}
+            <div className="profile-avatar-orbit profile-avatar-orbit-single">
+              {data.avatarUrl ? (
+                <Image
+                  src={data.avatarUrl}
+                  alt={`${myProfile?.name ?? "Your"} profile photo`}
+                  width={96}
+                  height={96}
+                  unoptimized
+                  className="profile-avatar profile-avatar-single object-cover"
+                />
+              ) : (
+                <div className="profile-avatar profile-avatar-single profile-avatar-initial">
+                  {myProfile?.name.charAt(0).toUpperCase() ?? "♡"}
+                </div>
+              )}
+            </div>
             <h2 className="mt-4 text-2xl font-bold">{myProfile?.name ?? "Your profile"}</h2>
             {myProfile ? <p className="mt-1 text-sm text-ink-soft">@{myProfile.username} · {myProfile.bio || "A little corner is waiting."}</p> : null}
           </Card>
@@ -101,16 +103,14 @@ export default async function UsPage({ searchParams }: { searchParams: Promise<{
       <div className="space-y-4">
         {profileUpdated ? <Card className="border-primary/40 bg-blush text-center font-bold text-primary"><p role="status">Your profile was updated successfully.</p></Card> : null}
         <Card className="love-profile-card text-center">
-          <div className="relative flex items-center justify-center -space-x-3">
+          <div className="profile-avatar-orbit profile-avatar-orbit-paired">
             {[me, partner].filter((person) => person !== null).map((person) => (
               person ? avatarUrls.get(person.id)
-                ? <Image key={person.id} src={avatarUrls.get(person.id)!} alt="" width={84} height={84} unoptimized className="h-20 w-20 rounded-full border-4 border-card object-cover" />
-                : <div key={person.id} className="flex h-20 w-20 items-center justify-center rounded-full border-4 border-card bg-blush text-3xl">{person.name.charAt(0).toUpperCase()}</div>
+                ? <Image key={person.id} src={avatarUrls.get(person.id)!} alt="" width={84} height={84} unoptimized className="profile-avatar profile-avatar-photo object-cover" />
+                : <div key={person.id} className="profile-avatar profile-avatar-initial">{person.name.charAt(0).toUpperCase()}</div>
                 : null
             ))}
-            <span className="absolute left-1/2 top-1/2 z-10 flex -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-card p-1">
-              <Heart size={22} />
-            </span>
+            <Heart size={32} />
           </div>
           <h2 className="mt-4 text-2xl font-bold">{me?.name} &amp; {partner?.name ?? "your person"}</h2>
           {partner ? <p className="mt-1 text-sm text-ink-soft">@{partner.username} · {partner.bio ?? "Your favorite person."}</p> : null}

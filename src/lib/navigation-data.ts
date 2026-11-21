@@ -12,13 +12,13 @@ export async function getDatesHomeData() {
 
   const userId = authData.user.id;
   const [profileResult, membershipResult] = await Promise.all([
-    supabase.from("profiles").select("id, name, birth_day, birth_month").eq("id", userId).maybeSingle(),
+    supabase.from("profiles").select("id, name, birth_day, birth_month, birth_year").eq("id", userId).maybeSingle(),
     supabase.from("couple_members").select("couple_id").eq("user_id", userId).maybeSingle(),
   ]);
   if (profileResult.error) throw new Error(`Could not load your profile: ${profileResult.error.message}`);
   if (membershipResult.error) throw new Error(`Could not load your pairing: ${membershipResult.error.message}`);
 
-  let partner: { id: string; name: string; birth_day: number | null; birth_month: number | null } | null = null;
+  let partner: { id: string; name: string; birth_day: number | null; birth_month: number | null; birth_year: number | null } | null = null;
   let togetherSince: string | null = null;
   if (membershipResult.data) {
     const [coupleResult, membersResult] = await Promise.all([
@@ -32,7 +32,7 @@ export async function getDatesHomeData() {
     if (partnerId) {
       const partnerResult = await supabase
         .from("profiles")
-        .select("id, name, birth_day, birth_month")
+        .select("id, name, birth_day, birth_month, birth_year")
         .eq("id", partnerId)
         .maybeSingle();
       if (partnerResult.error) throw new Error(`Could not load your partner's birthday: ${partnerResult.error.message}`);

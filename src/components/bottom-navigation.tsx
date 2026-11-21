@@ -16,12 +16,28 @@ export function BottomNavigation() {
 
   return (
     <nav className="bottom-nav" aria-label="Main navigation">
-      {items.map(({ href, label, icon }) => {
-        const active = href === "/"
-          ? pathname === "/" || pathname.startsWith("/important-dates")
-          : pathname === href || pathname.startsWith(`${href}/`);
-        return <NavigationItem key={href} {...{ href, label, icon, active }} />;
-      })}
+      <div className="bottom-nav-pill">
+        {items.map(({ href, label, icon }) => {
+          const active = href === "/"
+            ? pathname === "/" || pathname.startsWith("/important-dates")
+            : pathname === href || pathname.startsWith(`${href}/`);
+          return <NavigationItem key={href} {...{ href, label, icon, active }} />;
+        })}
+      </div>
+    </nav>
+  );
+}
+
+export function BottomNavigationFallback() {
+  return (
+    <nav className="bottom-nav" aria-label="Main navigation">
+      <div className="bottom-nav-pill">
+        {items.map(({ label, icon }) => (
+          <span className="bottom-nav-item" key={label} aria-hidden="true">
+            <NavigationIcon name={icon} />
+          </span>
+        ))}
+      </div>
     </nav>
   );
 }

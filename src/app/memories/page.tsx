@@ -161,7 +161,7 @@ async function MemoriesContent({
           <details className="memory-create">
             <summary>
               <span className="memory-create-icon" aria-hidden="true">+</span>
-              <span><strong>Start a new album</strong><small>Ring a new memory together.</small></span>
+              <strong>Add album</strong>
             </summary>
             <div className="memory-create-form"><AlbumCreateForm /></div>
           </details>

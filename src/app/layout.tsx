@@ -1,14 +1,18 @@
 import type { Metadata, Viewport } from "next";
-import { Quicksand } from "next/font/google";
-import { Suspense } from "react";
+import { Inter, Quicksand } from "next/font/google";
 import "./globals.css";
 import { AppShell } from "@/components/app-shell";
 import { t } from "@/lib/text";
-import { AppLoading } from "@/components/app-loading";
 
 const quicksand = Quicksand({
   subsets: ["latin"],
   variable: "--font-quicksand",
+  display: "swap",
+});
+
+const inter = Inter({
+  subsets: ["latin"],
+  variable: "--font-celebration-quote",
   display: "swap",
 });
 
@@ -44,12 +48,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html
       lang="en"
-      className={quicksand.variable}
+      className={`${quicksand.variable} ${inter.variable}`}
     >
       <body>
-        <Suspense fallback={<AppLoading />}>
-          <AppShell>{children}</AppShell>
-        </Suspense>
+        <AppShell>{children}</AppShell>
       </body>
     </html>
   );

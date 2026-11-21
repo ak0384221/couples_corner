@@ -16,6 +16,7 @@ export const profileSchema = z.object({
   bio: z.string().trim().max(120, "Bio must be 120 characters or fewer."),
   birthDay: z.number().int().min(1).max(31).nullable(),
   birthMonth: z.number().int().min(1).max(12).nullable(),
+  birthYear: z.number().int().min(1900).max(new Date().getFullYear()).nullable(),
 });
 
 export const dateSchema = z.object({

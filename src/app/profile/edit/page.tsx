@@ -10,7 +10,7 @@ export default async function EditProfilePage() {
   const supabase = await createClient();
   const { data: profile, error } = await supabase
     .from("profiles")
-    .select("name, username, bio, birth_day, birth_month, photo_path")
+    .select("name, username, bio, birth_day, birth_month, birth_year, photo_path")
     .eq("id", user.id)
     .maybeSingle();
   if (error) throw new Error(`Could not load your profile: ${error.message}`);

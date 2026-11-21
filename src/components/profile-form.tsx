@@ -18,6 +18,7 @@ export function ProfileForm({
     bio: string | null;
     birth_day: number | null;
     birth_month: number | null;
+    birth_year: number | null;
     photo_path?: string | null;
   };
   avatarUrl?: string | null;
@@ -63,6 +64,18 @@ export function ProfileForm({
           </select>
         </label>
       </div>
+      <label className="field-label">
+        <span>Birth year (optional, for birthday age)</span>
+        <input
+          className="field-input"
+          type="number"
+          name="birth_year"
+          min={1900}
+          max={new Date().getFullYear()}
+          defaultValue={profile?.birth_year ?? ""}
+          placeholder="e.g. 2002"
+        />
+      </label>
       <ErrorMessage>{state.error}</ErrorMessage>
       {state.success ? <p role="status" className="text-sm font-bold text-primary">{state.success}</p> : null}
       <SubmitButton>{pending ? "Saving…" : editing ? "Save profile" : "Save my profile"}</SubmitButton>

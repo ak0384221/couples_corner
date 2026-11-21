@@ -78,6 +78,7 @@ export async function saveProfile(_previous: ActionState, formData: FormData): P
     bio: value(formData, "bio"),
     birthDay: nullableNumber(value(formData, "birth_day")),
     birthMonth: nullableNumber(value(formData, "birth_month")),
+    birthYear: nullableNumber(value(formData, "birth_year")),
   });
   if (!parsed.success) return fail(parsed.error.issues[0]?.message ?? "Check your profile details.");
   if ((parsed.data.birthDay === null) !== (parsed.data.birthMonth === null)) {
@@ -99,6 +100,7 @@ export async function saveProfile(_previous: ActionState, formData: FormData): P
       bio: parsed.data.bio || null,
       birth_day: parsed.data.birthDay,
       birth_month: parsed.data.birthMonth,
+      birth_year: parsed.data.birthYear,
       ...(photoPath ? { photo_path: photoPath } : {}),
     });
   if (error) {
@@ -706,6 +708,7 @@ export async function updateProfileSettings(_previous: ActionState, formData: Fo
     bio: value(formData, "bio"),
     birthDay: nullableNumber(value(formData, "birth_day")),
     birthMonth: nullableNumber(value(formData, "birth_month")),
+    birthYear: nullableNumber(value(formData, "birth_year")),
   });
   if (!parsed.success) return fail(parsed.error.issues[0]?.message ?? "Check your profile details.");
   if ((parsed.data.birthDay === null) !== (parsed.data.birthMonth === null)) return fail("Choose both birthday fields or leave both blank.");
@@ -724,6 +727,7 @@ export async function updateProfileSettings(_previous: ActionState, formData: Fo
     bio: parsed.data.bio || null,
     birth_day: parsed.data.birthDay,
     birth_month: parsed.data.birthMonth,
+    birth_year: parsed.data.birthYear,
     ...(photoPath ? { photo_path: photoPath } : {}),
   }).eq("id", user.id);
   if (error) {
@@ -733,6 +737,7 @@ export async function updateProfileSettings(_previous: ActionState, formData: Fo
     }
     return fail(databaseMessage(error.message));
   }
+  revalidatePath("/");
   revalidatePath("/us");
   revalidatePath("/profile");
   revalidatePath("/profile/edit");

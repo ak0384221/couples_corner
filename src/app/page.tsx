@@ -62,14 +62,31 @@ async function HomeContent() {
   const upcoming = dates.filter((date) => date.status !== "cancelled");
   await connection();
   const today = dhakaDateParts(new Date());
-  const isPartnerBirthday = Boolean(
-    partner?.birth_day === today.day && partner.birth_month === today.month,
-  );
+  const isMyBirthday = profile.birth_day === today.day && profile.birth_month === today.month;
+  const isPartnerBirthday = partner?.birth_day === today.day && partner.birth_month === today.month;
+  const isBirthday = isMyBirthday || isPartnerBirthday;
+  const birthdayName = isMyBirthday && isPartnerBirthday
+    ? `${profile.name} & ${partner?.name ?? "your partner"}`
+    : isMyBirthday
+      ? profile.name
+      : partner?.name ?? "your partner";
+  const myAge = profile.birth_year ? today.year - profile.birth_year : null;
+  const partnerAge = partner?.birth_year ? today.year - partner.birth_year : null;
+  const birthdayAge = isMyBirthday && isPartnerBirthday
+    ? myAge !== null && partnerAge !== null
+      ? `You are ${myAge} today, and ${partner?.name} is ${partnerAge}!`
+      : myAge !== null
+        ? `You are ${myAge} today!`
+        : partnerAge !== null
+          ? `${partner?.name} is ${partnerAge} today!`
+          : undefined
+    : isMyBirthday && myAge !== null
+      ? `You are ${myAge} today!`
+      : isPartnerBirthday && partnerAge !== null
+        ? `You are ${partnerAge} today!`
+        : undefined;
   const anniversaryDate = togetherSince ? new Date(`${togetherSince}T00:00:00Z`) : null;
   const anniversaryYears = anniversaryDate ? today.year - anniversaryDate.getUTCFullYear() : 0;
-  const daysTogether = anniversaryDate
-    ? Math.floor((Date.UTC(today.year, today.month - 1, today.day) - anniversaryDate.getTime()) / 86_400_000)
-    : 0;
   const isAnniversary = Boolean(
     anniversaryDate &&
     anniversaryYears > 0 &&
@@ -80,12 +97,13 @@ async function HomeContent() {
   return (
     <AppFrame title={`Hi, ${profile.name}`}>
       <div className="space-y-4">
-        {isPartnerBirthday && partner ? (
+        {isBirthday ? (
           <CelebrationCard
             kind="birthday"
-            eyebrow="Birthday today"
-            title={`It’s ${partner.name}’s birthday!`}
-            message="Make the day a little sweeter."
+            eyebrow={isMyBirthday && isPartnerBirthday ? "Both your birthdays today" : "Birthday today"}
+            title={`Happy birthday to ${birthdayName}!`}
+            subtitle={birthdayAge}
+            message="Wishing you a birthday filled with moments that make you smile, people who make you feel loved, and memories you’ll cherish all year long. May this new chapter bring you everything you’ve been working toward and more."
             primaryLabel="See memories"
             secondaryLabel="Plan a surprise"
           />
@@ -95,7 +113,8 @@ async function HomeContent() {
             kind="anniversary"
             eyebrow="Today is your anniversary"
             title={`Happy ${anniversaryOrdinal(anniversaryYears)} Anniversary`}
-            message={`${profile.name} & ${partner?.name ?? "your person"} · ${daysTogether} days together`}
+            message="MashaAllah on another beautiful year together. May Allah protect your bond, deepen your understanding, and keep you both as a source of comfort and coolness to each other’s eyes in this life and in Jannah."
+            details={`${profile.name} & ${partner?.name ?? "your person"} · Together for ${anniversaryYears} ${anniversaryYears === 1 ? "year" : "years"}, 0 months, 0 days`}
             primaryLabel="See memories"
             secondaryLabel="Plan a date"
           />
@@ -162,22 +181,34 @@ function CelebrationCard({
   kind,
   eyebrow,
   title,
+  subtitle,
   message,
+  details,
   primaryLabel,
   secondaryLabel,
 }: {
   kind: "birthday" | "anniversary";
   eyebrow: string;
   title: string;
+  subtitle?: string;
   message: string;
+  details?: string;
   primaryLabel: string;
   secondaryLabel: string;
 }) {
   return (
     <Card className={`celebration-card celebration-${kind}`}>
+      <span className="celebration-balloons" aria-hidden="true">
+        <span className="celebration-balloon" />
+        <span className="celebration-balloon" />
+        <span className="celebration-balloon" />
+        <span className="celebration-balloon" />
+      </span>
       <span className="celebration-sparkles" aria-hidden="true">♥ · ✦ · ♥</span>
       <p className="celebration-eyebrow">{eyebrow}</p>
       <h2>{title}</h2>
+      {subtitle ? <p className="celebration-age">{subtitle}</p> : null}
+      {details ? <p className="celebration-details">{details}</p> : null}
       <p className="celebration-message">{message}</p>
       <div className="celebration-actions">
         <Link href="/memories" className="celebration-action celebration-action-light">{primaryLabel}</Link>

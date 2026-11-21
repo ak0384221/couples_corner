@@ -2,7 +2,6 @@ import { Suspense } from "react";
 import Link from "next/link";
 import { connection } from "next/server";
 import { AppBackButton } from "@/components/app-back-button";
-import { BottomNavigation } from "@/components/bottom-navigation";
 import { Heart } from "@/components/heart";
 import { getCurrentUser } from "@/lib/supabase/auth";
 import { createClient } from "@/lib/supabase/server";
@@ -56,7 +55,6 @@ export async function AppFrame({
         </Suspense>
       </header>
       {children}
-      <BottomNavigation />
     </div>
   );
 }
